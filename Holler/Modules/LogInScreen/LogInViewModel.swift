@@ -7,6 +7,7 @@
 
 import UIKit
 import FirebaseAuth
+import FirebaseStorage
 
 protocol LogInViewModelDelegate: AnyObject {
     func logInOutput(success: Bool)
@@ -28,4 +29,6 @@ final class LogInViewModel {
             delegate?.logInOutput(success: true)
         }
     }
+    
+
 }

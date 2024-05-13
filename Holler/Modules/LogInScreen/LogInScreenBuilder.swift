@@ -6,3 +6,13 @@
 //
 
 import Foundation
+
+final class LogInScreenBuilder {
+    static func create() -> LogInViewController {
+        let viewController = LogInViewController()
+        let viewModel = LogInViewModel()
+        viewController.viewModel = viewModel
+        viewModel.delegate = viewController
+        return viewController
+    }
+}

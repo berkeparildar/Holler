@@ -14,7 +14,7 @@ class SplashViewController: UIViewController, ShowAlert {
     
     var background: UIView = {
         var backgroundView = UIView()
-        backgroundView.backgroundColor = .black
+        backgroundView.backgroundColor = .red
         return backgroundView
     }()
     
@@ -26,6 +26,7 @@ class SplashViewController: UIViewController, ShowAlert {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .red
         setupViews()
         viewModel.checkInternetConnection()
     }
@@ -54,7 +55,7 @@ extension SplashViewController: SplashViewModelDelegate {
     
     func navigateToHomePage() {
         guard let window = self.view.window else { return }
-        let loginVC = LogInViewController()
+        let loginVC = LogInScreenBuilder.create()
         let navigationController = UINavigationController(rootViewController: loginVC)
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             window.rootViewController = navigationController

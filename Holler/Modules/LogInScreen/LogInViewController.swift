@@ -131,6 +131,18 @@ class LogInViewController: UIViewController {
     }
     
     @objc private func signupButtonTapped() {
-        print("Sign Up button tapped!")
+        let signUpVC = SignUpScreenBuilder.create()
+        self.navigationController?.pushViewController(signUpVC, animated: true)
+    }
+}
+
+extension LogInViewController: LogInViewModelDelegate, ShowAlert {
+    func logInOutput(success: Bool) {
+        if success {
+            // navigate
+        }
+        else {
+            showAlert(title: "Error", message: "There was an error logging you in, please try again later")
+        }
     }
 }
