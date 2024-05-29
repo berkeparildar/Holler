@@ -12,13 +12,24 @@ class ProfileViewController: UIViewController, LoadingShowable {
     
     var viewModel: ProfileViewModel!
     var posts: [ProfilePost] = []
-    
+
+    lazy var tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(TableViewPostCell.self, forCellReuseIdentifier: "postCell")
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 300
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        return tableView
+    }()
+
     lazy var bannerImage: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.layer.masksToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView;
+        return imageView
     }()
     
     lazy var profileImage: UIImageView = {
@@ -29,7 +40,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         imageView.layer.borderColor = UIColor.black.cgColor
         imageView.layer.masksToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView;
+        return imageView
     }()
     
     lazy var nameLabel: UILabel = {
@@ -56,21 +67,10 @@ class ProfileViewController: UIViewController, LoadingShowable {
         return label
     }()
     
-    lazy var postsView: UITableView = {
-        let tableView = UITableView()
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.register(TableViewPostCell.self, forCellReuseIdentifier: "postCell")
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 300
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        return tableView
-    }()
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         showLoading()
-        setupViews()
+        setupTableView()
         viewModel.fetchUser { user, error in
             if let error = error {
                 print("Error fetching user: \(error.localizedDescription)")
@@ -88,7 +88,9 @@ class ProfileViewController: UIViewController, LoadingShowable {
         followInfoLabel.text = "\(user.followers.count) followers • \(user.following.count) following"
         if let profileImagePath = user.profileImage {
             viewModel.loadImage(from: profileImagePath) { [weak self] url in
-                self?.profileImage.kf.setImage(with: url)
+                guard let self = self else { return }
+                self.profileImage.kf.setImage(with: url)
+                self.viewModel.fetchPosts(with: user.posts)
             }
         }
         if let bannerImagePath = user.bannerImage {
@@ -96,50 +98,65 @@ class ProfileViewController: UIViewController, LoadingShowable {
                 self?.bannerImage.kf.setImage(with: url)
             }
         }
-        viewModel.fetchPosts(with: user.posts)
     }
     
-    func setupViews() {
-        view.addSubview(bannerImage)
+    private func setupTableView() {
+        view.addSubview(tableView)
         NSLayoutConstraint.activate([
-            bannerImage.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            bannerImage.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            bannerImage.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bannerImage.heightAnchor.constraint(equalToConstant: 128)
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
+
+        let headerView = createTableHeaderView()
+        tableView.tableHeaderView = headerView
+    }
+
+    private func createTableHeaderView() -> UIView {
+        let headerView = UIView()
+        headerView.translatesAutoresizingMaskIntoConstraints = false
         
-        view.addSubview(profileImage)
+        headerView.addSubview(bannerImage)
+        headerView.addSubview(profileImage)
+        headerView.addSubview(nameLabel)
+        headerView.addSubview(usernameLabel)
+        headerView.addSubview(followInfoLabel)
+
         NSLayoutConstraint.activate([
+            bannerImage.topAnchor.constraint(equalTo: headerView.topAnchor),
+            bannerImage.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            bannerImage.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            bannerImage.heightAnchor.constraint(equalToConstant: 128),
+            
             profileImage.topAnchor.constraint(equalTo: bannerImage.bottomAnchor, constant: -28),
-            profileImage.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
+            profileImage.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 8),
             profileImage.heightAnchor.constraint(equalToConstant: 56),
             profileImage.widthAnchor.constraint(equalToConstant: 56),
-        ])
-        
-        view.addSubview(nameLabel)
-        NSLayoutConstraint.activate([
+            
             nameLabel.topAnchor.constraint(equalTo: profileImage.bottomAnchor, constant: 16),
-            nameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
-        ])
-        
-        view.addSubview(usernameLabel)
-        NSLayoutConstraint.activate([
+            nameLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 8),
+            
             usernameLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8),
-            usernameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
-        ])
-        
-        view.addSubview(followInfoLabel)
-        NSLayoutConstraint.activate([
+            usernameLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 8),
+            
             followInfoLabel.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 16),
-            followInfoLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
+            followInfoLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 8),
+            followInfoLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -8)
         ])
         
+        // Set frame for headerView based on constraints
+        headerView.layoutIfNeeded()
+        let headerHeight = followInfoLabel.frame.maxY + 8
+        headerView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: headerHeight)
+        
+        return headerView
     }
 }
 
 extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        posts.count
+        return posts.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -147,23 +164,12 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
         cell.configureAsProfilePost(profileImage: profileImage.image ?? UIImage(systemName: "globe")!, name: nameLabel.text ?? "", username: usernameLabel.text ?? "", with: posts[indexPath.row])
         return cell
     }
-    
-    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
-    }
 }
 
 extension ProfileViewController: ProfileDelegate {
     func fetchPostOutput(posts: [ProfilePost]) {
         self.posts = posts
-        view.addSubview(postsView)
-        NSLayoutConstraint.activate([
-            postsView.topAnchor.constraint(equalTo: followInfoLabel.bottomAnchor, constant: 8),
-            postsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            postsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            postsView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        ])
-        postsView.reloadData()
+        tableView.reloadData()
         hideLoading()
     }
 }

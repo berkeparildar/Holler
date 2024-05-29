@@ -7,9 +7,10 @@
 
 import UIKit
 import FirebaseAuth
+import KeychainAccess
 
 class SplashViewController: UIViewController, ShowAlert {
-    
+    private let keychain = Keychain(service: "com.bprldr.Holler")
     var viewModel: SplashViewModel!
     
     var background: UIView = {
@@ -55,9 +56,30 @@ extension SplashViewController: SplashViewModelDelegate {
     
     func navigateToHomePage() {
         guard let window = self.view.window else { return }
-        let loginVC = LogInScreenBuilder.create()
-        let navigationController = UINavigationController(rootViewController: loginVC)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        if let uid = try? keychain.get("uid"), !uid.isEmpty {
+            UserService.shared.fetchCurrentUser { user, error in
+                if let error = error {
+                    print(error.localizedDescription)
+                }
+                if let user = user {
+                    let tabBarController = UITabBarController()
+                    let searchViewController = SearchViewController()
+                    let searchNavController = UINavigationController(rootViewController: searchViewController)
+                    searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
+                    let homeViewController = HomeBuilder.create()
+                    let homeNavController = UINavigationController(rootViewController: homeViewController)
+                    homeNavController.tabBarItem = UITabBarItem(title: "Feed", image: UIImage(systemName: "newspaper.fill"), tag: 1)
+                    let profileViewController = ProfileScreenBuilder.create(userID: user.uid)
+                    let profileNavController = UINavigationController(rootViewController: profileViewController)
+                    profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
+                    tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
+                    window.rootViewController = tabBarController
+                }
+            }
+            
+        } else {
+            let loginVC = LogInScreenBuilder.create()
+            let navigationController = UINavigationController(rootViewController: loginVC)
             window.rootViewController = navigationController
         }
     }
