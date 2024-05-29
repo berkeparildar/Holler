@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SignUpViewController: UIViewController {
+class SignUpViewController: UIViewController, LoadingShowable, SuccessShowable {
     
     var viewModel: SignUpViewModel!
     
@@ -174,14 +174,20 @@ class SignUpViewController: UIViewController {
     }
     
     @objc private func signUpButtonTapped() {
+        showLoading()
         guard let email = emailTextField.text, let password = passwordTextField.text, let name = nameTextField.text, let username = usernameTextField.text else {
             return
         }
-        viewModel.signUp(email: email, password: password, name: name, username: username) { error in
+        viewModel.signUp(email: email, password: password, name: name, username: username) { [weak self] error in
+            guard let self = self else { return }
+            hideLoading()
             if let error = error {
                 print("Signup error: \(error.localizedDescription)")
             } else {
                 print("Signup successful!")
+                showSuccessMessage {
+                    self.navigationController?.popToRootViewController(animated: true)
+                }
             }
         }
     }

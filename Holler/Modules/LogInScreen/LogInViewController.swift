@@ -72,7 +72,6 @@ class LogInViewController: UIViewController {
     }
     
     private func setupViews() {
-        // Add email text field
         view.addSubview(emailTextField)
         NSLayoutConstraint.activate([
             emailTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
@@ -139,7 +138,19 @@ class LogInViewController: UIViewController {
 extension LogInViewController: LogInViewModelDelegate, ShowAlert {
     func logInOutput(success: Bool) {
         if success {
-            // navigate
+            guard let window = self.view.window else { return }
+            let tabBarController = UITabBarController()
+            let searchViewController = SearchViewController()
+            let searchNavController = UINavigationController(rootViewController: searchViewController)
+            searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
+            let homeViewController = HomeBuilder.create()
+            let homeNavController = UINavigationController(rootViewController: homeViewController)
+            homeNavController.tabBarItem = UITabBarItem(title: "Feed", image: UIImage(systemName: "newspaper.fill"), tag: 1)
+            let profileViewController = ProfileScreenBuilder.create(userID: UserService.shared.currentUser!.uid)
+            let profileNavController = UINavigationController(rootViewController: profileViewController)
+            profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
+            tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
+            window.rootViewController = tabBarController
         }
         else {
             showAlert(title: "Error", message: "There was an error logging you in, please try again later")

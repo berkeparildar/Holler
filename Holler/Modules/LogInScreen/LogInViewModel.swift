@@ -8,6 +8,7 @@
 import UIKit
 import FirebaseAuth
 import FirebaseStorage
+import KeychainAccess
 
 protocol LogInViewModelDelegate: AnyObject {
     func logInOutput(success: Bool)
@@ -25,10 +26,19 @@ final class LogInViewModel {
                 delegate?.logInOutput(success: false)
                 return
             }
-            print("Login successful!")
-            delegate?.logInOutput(success: true)
+            UserService.shared.fetchCurrentUser { (user, error) in
+                if let error = error {
+                    print("Error fetching user: \(error.localizedDescription)")
+                    self.delegate?.logInOutput(success: false)
+                    return
+                }
+                
+                if let user = user {
+                    print("User fetched: \(user.name)")
+                    UserService.shared.saveCurrentUserToKeychain()
+                    self.delegate?.logInOutput(success: true)
+                }
+            }
         }
     }
-    
-
 }
