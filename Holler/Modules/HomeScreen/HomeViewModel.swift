@@ -25,10 +25,9 @@ final class HomeViewModel {
             completion([], nil)
             return
         }
-        var posts = [HomePagePost]()
         
+        var posts = [HomePagePost]()
         let dispatchGroup = DispatchGroup()
-
         for userID in followingIDs {
             let userRef = db.collection("users").document(userID)
             dispatchGroup.enter()
@@ -38,12 +37,10 @@ final class HomeViewModel {
                     print("Error fetching user document: \(error.localizedDescription)")
                     return
                 }
-                
                 guard let document = document, document.exists, let data = document.data(), let name = data["name"] as? String, let username = data["username"] as? String, let profileImagePath = data["profileURL"] as? String, let postIDs = data["posts"] as? [String] else {
                     dispatchGroup.leave()
                     return
                 }
-                
                 let postRef = self.db.collection("posts")
                 for postID in postIDs {
                     dispatchGroup.enter()

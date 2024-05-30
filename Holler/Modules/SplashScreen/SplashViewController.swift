@@ -48,7 +48,6 @@ class SplashViewController: UIViewController, ShowAlert {
             self.splashLogo.heightAnchor.constraint(equalToConstant: 120),
             
         ])
-        
     }
 }
 

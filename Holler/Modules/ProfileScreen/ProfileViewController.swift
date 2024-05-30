@@ -12,12 +12,14 @@ class ProfileViewController: UIViewController, LoadingShowable {
     
     var viewModel: ProfileViewModel!
     var posts: [ProfilePost] = []
+    var user: User!
 
     lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(TableViewPostCell.self, forCellReuseIdentifier: "postCell")
+        tableView.register(ProfilePostCell.self, forCellReuseIdentifier: "postCell")
+        tableView.register(ProfilePostImageCell.self, forCellReuseIdentifier: "postImageCell")
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 300
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -69,7 +71,6 @@ class ProfileViewController: UIViewController, LoadingShowable {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        showLoading()
         setupTableView()
         viewModel.fetchUser { user, error in
             if let error = error {
@@ -85,19 +86,10 @@ class ProfileViewController: UIViewController, LoadingShowable {
     private func configureWithUser(user: User) {
         nameLabel.text = user.name
         usernameLabel.text = "@\(user.username)"
+        profileImage.image = user.profileImage.image
+        bannerImage.image = user.bannerImage.image
         followInfoLabel.text = "\(user.followers.count) followers • \(user.following.count) following"
-        if let profileImagePath = user.profileImage {
-            viewModel.loadImage(from: profileImagePath) { [weak self] url in
-                guard let self = self else { return }
-                self.profileImage.kf.setImage(with: url)
-                self.viewModel.fetchPosts(with: user.posts)
-            }
-        }
-        if let bannerImagePath = user.bannerImage {
-            viewModel.loadImage(from: bannerImagePath) { [weak self] url in
-                self?.bannerImage.kf.setImage(with: url)
-            }
-        }
+        self.viewModel.fetchPosts(with: user.posts)
     }
     
     private func setupTableView() {
@@ -145,7 +137,6 @@ class ProfileViewController: UIViewController, LoadingShowable {
             followInfoLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -8)
         ])
         
-        // Set frame for headerView based on constraints
         headerView.layoutIfNeeded()
         let headerHeight = followInfoLabel.frame.maxY + 8
         headerView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: headerHeight)
@@ -156,20 +147,35 @@ class ProfileViewController: UIViewController, LoadingShowable {
 
 extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if posts.isEmpty {
+            return 1
+        }
         return posts.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! TableViewPostCell
-        cell.configureAsProfilePost(profileImage: profileImage.image ?? UIImage(systemName: "globe")!, name: nameLabel.text ?? "", username: usernameLabel.text ?? "", with: posts[indexPath.row])
+        if posts.isEmpty {
+            let cell = UITableViewCell()
+            let activityIndicator = UIActivityIndicatorView()
+            cell.contentView.addSubview(activityIndicator)
+            activityIndicator.startAnimating()
+            return cell
+        }
+        let post = posts[indexPath.row]
+        if post.hasImage {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "postImageCell", for: indexPath) as! ProfilePostImageCell
+            cell.configure(profileImage: UserService.shared.currentUser?.profileImage.image ?? UIImage(systemName: "globe")!, name: nameLabel.text ?? "", username: usernameLabel.text ?? "", with: posts[indexPath.row])
+            return cell
+        }
+        let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! ProfilePostCell
+        cell.configure(profileImage: UserService.shared.currentUser?.profileImage.image ?? UIImage(systemName: "globe")!, name: nameLabel.text ?? "", username: usernameLabel.text ?? "", with: posts[indexPath.row])
         return cell
     }
 }
 
 extension ProfileViewController: ProfileDelegate {
     func fetchPostOutput(posts: [ProfilePost]) {
-        self.posts = posts
+        //self.posts = posts
         tableView.reloadData()
-        hideLoading()
     }
 }

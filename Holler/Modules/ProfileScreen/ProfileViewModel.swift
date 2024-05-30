@@ -22,22 +22,27 @@ final class ProfileViewModel {
     }
     
     func fetchUser(completion: @escaping (User?, Error?) -> Void) {
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(userID)
-        
-        userRef.getDocument { (document, error) in
-            if let error = error {
-                completion(nil, error)
-                return
-            }
+        if userID == UserService.shared.currentUser?.uid {
+            completion(UserService.shared.currentUser, nil)
+        }
+        else {
+            let db = Firestore.firestore()
+            let userRef = db.collection("users").document(userID)
             
-            guard let document = document, document.exists, let data = document.data() else {
-                completion(nil, NSError(domain: "ProfileViewModel", code: 404, userInfo: [NSLocalizedDescriptionKey: "User not found"]))
-                return
+            userRef.getDocument { (document, error) in
+                if let error = error {
+                    completion(nil, error)
+                    return
+                }
+                
+                guard let document = document, document.exists, let data = document.data() else {
+                    completion(nil, NSError(domain: "ProfileViewModel", code: 404, userInfo: [NSLocalizedDescriptionKey: "User not found"]))
+                    return
+                }
+                
+                let user = User(uid: self.userID, data: data)
+                completion(user, nil)
             }
-            
-            let user = User(uid: self.userID, data: data)
-            completion(user, nil)
         }
     }
     
@@ -84,5 +89,4 @@ final class ProfileViewModel {
                 completion(url)
             }
         }
-    
 }

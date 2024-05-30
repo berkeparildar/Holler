@@ -5,7 +5,7 @@
 //  Created by Berke Parıldar on 19.05.2024.
 //
 
-import Foundation
+import UIKit
 
 struct User {
     let uid: String
@@ -14,8 +14,10 @@ struct User {
     let followers: [String]
     let following: [String]
     let posts: [String]
-    let profileImage: String?
-    let bannerImage: String?
+    let profileImageURL: String?
+    let bannerImageURL: String?
+    var profileImage = UIImageView()
+    var bannerImage = UIImageView()
     
     init(uid: String, data: [String: Any]) {
         self.uid = uid
@@ -24,7 +26,7 @@ struct User {
         self.following = data["following"] as? [String] ?? [String]()
         self.posts = data["posts"] as? [String] ?? [String]()
         self.username = data["username"] as? String ?? ""
-        self.profileImage = data["profileURL"] as? String
-        self.bannerImage = data["bannerURL"] as? String
+        self.profileImageURL = data["profileURL"] as? String
+        self.bannerImageURL = data["bannerURL"] as? String
     }
 }

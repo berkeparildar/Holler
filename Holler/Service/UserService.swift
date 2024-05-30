@@ -9,6 +9,7 @@ import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 import KeychainAccess
+import FirebaseStorage
 
 class UserService {
     static let shared = UserService()
@@ -39,8 +40,32 @@ class UserService {
             }
             
             let user = User(uid: uid, data: data)
+            if let profileImagePath = user.profileImageURL {
+                self.loadImage(from: profileImagePath) { url in
+                    user.profileImage.kf.setImage(with: url)
+                }
+            }
+            if let bannerImagePath = user.bannerImageURL {
+                self.loadImage(from: bannerImagePath) { url in
+                    user.bannerImage.kf.setImage(with: url)
+                }
+            }
             self.currentUser = user
             completion(user, nil)
+        }
+    }
+    
+    func loadImage(from path: String, completion: @escaping (URL?) -> Void) {
+        let storage = Storage.storage()
+        let storageRef = storage.reference().child(path)
+        
+        storageRef.downloadURL { (url, error) in
+            if let error = error {
+                print("Error fetching image URL: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+            completion(url)
         }
     }
     
