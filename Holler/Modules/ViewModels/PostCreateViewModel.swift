@@ -24,11 +24,10 @@ final class PostCreateViewModel {
         var postData: [String: Any] = [
             "hasImage": false,
             "image": "",
-            "likeCount": 0,
             "likes": [],
             "replies": [],
-            "replyCount": 0,
             "text": text,
+            "userID": UserService.shared.currentUser!.uid,
             "time": Int(Date().timeIntervalSince1970)
         ]
         
@@ -42,7 +41,7 @@ final class PostCreateViewModel {
                 }
                 if let imageUrl = imageUrl {
                     postData["hasImage"] = true
-                    postData["image"] = imageUrl
+                    postData["image"] = imageUrl.absoluteString
                 }
                 self.savePostData(postData, postRef: postRef, userID: currentUserUID, completion: completion)
             }
@@ -51,7 +50,7 @@ final class PostCreateViewModel {
         }
     }
     
-    private func uploadImage(_ imageData: Data?, postID: String, completion: @escaping (String?, Error?) -> Void) {
+    private func uploadImage(_ imageData: Data?, postID: String, completion: @escaping (URL?, Error?) -> Void) {
         guard let imageData = imageData else {
             completion(nil, NSError(domain: "Image conversion error", code: 400, userInfo: nil))
             return
@@ -62,7 +61,10 @@ final class PostCreateViewModel {
                 completion(nil, error)
                 return
             }
-            completion("posts/\(postID).jpg", nil)
+            let imagePath = "posts/\(postID).jpg"
+            FirebaseService.shared.getImageURL(from: imagePath) { url in
+                completion(url, nil)
+            }
         }
     }
     
@@ -80,9 +82,8 @@ final class PostCreateViewModel {
     
     private func addPostToUser(postID: String, userID: String, completion: @escaping (Bool, Error?) -> Void) {
         let userRef = db.collection("users").document(userID)
-        var currentPosts = UserService.shared.currentUser?.posts
-        currentPosts?.append(postID)
-        userRef.updateData(["posts": currentPosts!]) { error in
+        UserService.shared.currentUser!.posts.append(postID)
+        userRef.updateData(["posts": UserService.shared.currentUser!.posts]) { error in
             if let error = error {
                 completion(false, error)
                 return

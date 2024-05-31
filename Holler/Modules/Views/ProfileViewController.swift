@@ -8,24 +8,28 @@
 import UIKit
 import Kingfisher
 
+protocol ProfileViewModelDelegate: AnyObject {
+    func didFetchPosts(posts: [Post])
+    func didFetchUser(user: User)
+}
+
 class ProfileViewController: UIViewController, LoadingShowable {
     
     var viewModel: ProfileViewModel!
-    var posts: [ProfilePost] = []
-    var user: User!
+    var posts: [Post] = []
 
     lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(ProfilePostCell.self, forCellReuseIdentifier: "postCell")
-        tableView.register(ProfilePostImageCell.self, forCellReuseIdentifier: "postImageCell")
+        tableView.register(PostCell.self, forCellReuseIdentifier: "postCell")
+        tableView.register(PostImageCell.self, forCellReuseIdentifier: "postImageCell")
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 300
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
-
+    
     lazy var bannerImage: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -72,24 +76,20 @@ class ProfileViewController: UIViewController, LoadingShowable {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
-        viewModel.fetchUser { user, error in
-            if let error = error {
-                print("Error fetching user: \(error.localizedDescription)")
-                return
-            }
-            if let user = user {
-                self.configureWithUser(user: user)
-            }
-        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        print("called")
+        viewModel.fetchPostsForProfile()
     }
     
     private func configureWithUser(user: User) {
         nameLabel.text = user.name
         usernameLabel.text = "@\(user.username)"
-        profileImage.image = user.profileImage.image
-        bannerImage.image = user.bannerImage.image
+        profileImage.kf.setImage(with: URL(string: user.profileImageURL))
+        bannerImage.kf.setImage(with: URL(string: user.bannerImageURL))
         followInfoLabel.text = "\(user.followers.count) followers • \(user.following.count) following"
-        self.viewModel.fetchPosts(with: user.posts)
     }
     
     private func setupTableView() {
@@ -100,11 +100,11 @@ class ProfileViewController: UIViewController, LoadingShowable {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
-
+        
         let headerView = createTableHeaderView()
         tableView.tableHeaderView = headerView
     }
-
+    
     private func createTableHeaderView() -> UIView {
         let headerView = UIView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
@@ -114,7 +114,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         headerView.addSubview(nameLabel)
         headerView.addSubview(usernameLabel)
         headerView.addSubview(followInfoLabel)
-
+        
         NSLayoutConstraint.activate([
             bannerImage.topAnchor.constraint(equalTo: headerView.topAnchor),
             bannerImage.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
@@ -147,35 +147,28 @@ class ProfileViewController: UIViewController, LoadingShowable {
 
 extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if posts.isEmpty {
-            return 1
-        }
         return posts.count
     }
-    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if posts.isEmpty {
-            let cell = UITableViewCell()
-            let activityIndicator = UIActivityIndicatorView()
-            cell.contentView.addSubview(activityIndicator)
-            activityIndicator.startAnimating()
-            return cell
-        }
         let post = posts[indexPath.row]
         if post.hasImage {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "postImageCell", for: indexPath) as! ProfilePostImageCell
-            cell.configure(profileImage: UserService.shared.currentUser?.profileImage.image ?? UIImage(systemName: "globe")!, name: nameLabel.text ?? "", username: usernameLabel.text ?? "", with: posts[indexPath.row])
+            let cell = tableView.dequeueReusableCell(withIdentifier: "postImageCell", for: indexPath) as! PostImageCell
+            cell.configure(post: posts[indexPath.row])
             return cell
         }
-        let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! ProfilePostCell
-        cell.configure(profileImage: UserService.shared.currentUser?.profileImage.image ?? UIImage(systemName: "globe")!, name: nameLabel.text ?? "", username: usernameLabel.text ?? "", with: posts[indexPath.row])
+        let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! PostCell
+        cell.configure(post: posts[indexPath.row])
         return cell
     }
 }
 
-extension ProfileViewController: ProfileDelegate {
-    func fetchPostOutput(posts: [ProfilePost]) {
-        //self.posts = posts
+extension ProfileViewController: ProfileViewModelDelegate {
+    func didFetchUser(user: User) {
+        self.configureWithUser(user: user)
+    }
+    
+    func didFetchPosts(posts: [Post]) {
+        self.posts = posts
         tableView.reloadData()
     }
 }

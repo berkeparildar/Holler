@@ -38,18 +38,7 @@ class UserService {
                 completion(nil, NSError(domain: "UserService", code: 404, userInfo: [NSLocalizedDescriptionKey: "User not found"]))
                 return
             }
-            
             let user = User(uid: uid, data: data)
-            if let profileImagePath = user.profileImageURL {
-                self.loadImage(from: profileImagePath) { url in
-                    user.profileImage.kf.setImage(with: url)
-                }
-            }
-            if let bannerImagePath = user.bannerImageURL {
-                self.loadImage(from: bannerImagePath) { url in
-                    user.bannerImage.kf.setImage(with: url)
-                }
-            }
             self.currentUser = user
             completion(user, nil)
         }
@@ -73,6 +62,15 @@ class UserService {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         do {
             try keychain.set(uid, key: "uid")
+        } catch {
+            print("Keychain error: \(error.localizedDescription)")
+        }
+    }
+    
+    func clearCurrentUserFromKeychain() {
+        do {
+            try keychain.remove("uid")
+            print("UID successfully removed from keychain")
         } catch {
             print("Keychain error: \(error.localizedDescription)")
         }

@@ -1,32 +1,32 @@
 //
-//  ProfilePostModel.swift
+//  PostModel.swift
 //  Holler
 //
-//  Created by Berke Parıldar on 20.05.2024.
+//  Created by Berke Parıldar on 15.05.2024.
 //
 
 import Foundation
 
-struct ProfilePost {
+struct Post {
+    let userID: String
     let id: String
     let time: Int
     let postText: String
     let hasImage: Bool
-    let contentImagePath: String
-    let replyCount: Int
-    let likeCount: Int
+    let contentImageURL: String
     let replies: [String]
     let likes: [String]
+    let user: User?
     
-    init(id: String, data: [String: Any]) {
+    init(id: String, data: [String: Any], user: User?) {
         self.id = id
+        self.userID = data["userID"] as? String ?? ""
         self.postText = data["text"] as? String ?? ""
         self.hasImage = data["hasImage"] as? Bool ?? false
-        self.contentImagePath = data["image"] as? String ?? ""
-        self.replyCount = data["replyCount"] as? Int ?? 0
-        self.likeCount = data["likeCount"] as? Int ?? 0
+        self.contentImageURL = data["image"] as? String ?? ""
         self.replies = data["replies"] as? [String] ?? [String]()
         self.likes = data["likes"] as? [String] ?? [String]()
         self.time = data["time"] as? Int ?? 0
+        self.user = user
     }
 }

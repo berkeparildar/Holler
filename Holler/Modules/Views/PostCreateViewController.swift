@@ -81,7 +81,7 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
         view.addSubview(postButton)
         view.addSubview(selectedImageView)
         view.addSubview(removeImageButton)
-        
+        profileImageView.kf.setImage(with: URL(string: UserService.shared.currentUser!.profileImageURL))
         NSLayoutConstraint.activate([
             profileImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             profileImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
@@ -107,8 +107,6 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
             removeImageButton.topAnchor.constraint(equalTo: selectedImageView.topAnchor, constant: 8),
             removeImageButton.trailingAnchor.constraint(equalTo: selectedImageView.trailingAnchor, constant: -8)
         ])
-        
-        profileImageView.image = UserService.shared.currentUser?.profileImage.image
     }
     
     @objc private func didTapAddImage() {

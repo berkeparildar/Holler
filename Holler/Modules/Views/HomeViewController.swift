@@ -11,10 +11,14 @@ protocol PostCreationDelegate: AnyObject {
     func didPost()
 }
 
+protocol HomeViewModelDelegate: AnyObject {
+    func didFetchPosts(posts: [Post])
+}
+
 class HomeViewController: UIViewController {
     
     var viewModel: HomeViewModel!
-    var posts: [HomePagePost] = []
+    var posts: [Post] = []
     
     private lazy var createPostButton: UIButton = {
         let button = UIButton(type: .system)
@@ -28,8 +32,8 @@ class HomeViewController: UIViewController {
         let tableView = UITableView()
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.register(FeedPostCell.self, forCellReuseIdentifier: "postCell")
-        tableView.register(FeedPostImageCell.self, forCellReuseIdentifier: "postImageCell")
+        tableView.register(PostCell.self, forCellReuseIdentifier: "postCell")
+        tableView.register(PostImageCell.self, forCellReuseIdentifier: "postImageCell")
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 300
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -45,19 +49,10 @@ class HomeViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.title = "Home"
         showLoading()
         setupViews()
-        viewModel.fetchPostsForHomePage { [weak self] posts, error in
-            guard let self = self else { return }
-            if let error = error {
-                print("Error fetching posts for home page: \(error.localizedDescription)")
-                return
-            }
-            self.posts = posts ?? []
-            tableView.reloadData()
-            hideLoading()
-        }
-        self.title = "Home"
+        viewModel.fetchPostsForHomePage()
     }
     
     func setupViews() {
@@ -110,12 +105,12 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let post = posts[indexPath.row]
         if post.hasImage {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "postImageCell", for: indexPath) as! FeedPostImageCell
-            cell.configure(with: post)
+            let cell = tableView.dequeueReusableCell(withIdentifier: "postImageCell", for: indexPath) as! PostImageCell
+            cell.configure(post: posts[indexPath.row])
             return cell
         }
-        let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! FeedPostCell
-        cell.configure(with: post)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! PostCell
+        cell.configure(post: posts[indexPath.row])
         return cell
     }
     
@@ -129,17 +124,14 @@ extension HomeViewController: PostCreationDelegate {
         showLoading()
         posts.removeAll()
         tableView.reloadData()
-        viewModel.fetchPostsForHomePage { [weak self] posts, error in
-            guard let self = self else { return }
-            if let error = error {
-                print("Error fetching posts for home page: \(error.localizedDescription)")
-                return
-            }
-            self.posts = posts ?? []
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-                self.hideLoading()
-            }
-        }
+        viewModel.fetchPostsForHomePage()
+    }
+}
+
+extension HomeViewController: HomeViewModelDelegate {
+    func didFetchPosts(posts: [Post]) {
+        self.posts = posts
+        tableView.reloadData()
+        hideLoading()
     }
 }

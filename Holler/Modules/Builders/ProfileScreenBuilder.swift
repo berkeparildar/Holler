@@ -8,9 +8,9 @@
 import Foundation
 
 final class ProfileScreenBuilder {
-    static func create(userID: String) -> ProfileViewController {
+    static func create(userID: String, user: User? = nil) -> ProfileViewController {
         let viewController = ProfileViewController()
-        let viewModel = ProfileViewModel(userID: userID)
+        let viewModel = ProfileViewModel(userID: userID, user: user)
         viewController.viewModel = viewModel
         viewModel.delegate = viewController
         return viewController

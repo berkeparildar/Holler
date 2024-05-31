@@ -1,15 +1,15 @@
 //
-//  TableViewPostCell.swift
+//  PostWithImageCell.swift
 //  Holler
 //
-//  Created by Berke Parıldar on 15.05.2024.
+//  Created by Berke Parıldar on 30.05.2024.
 //
 
 import UIKit
 import FirebaseStorage
 
-class FeedPostCell: UITableViewCell {
-        
+class PostImageCell: UITableViewCell {
+    
     private lazy var profileImage: UIImageView = {
         let imageView = UIImageView()
         imageView.layer.cornerRadius = 16
@@ -49,6 +49,15 @@ class FeedPostCell: UITableViewCell {
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+    
+    private lazy var contentImage: UIImageView = {
+        let imageView = UIImageView()
+        imageView.layer.cornerRadius = 18
+        imageView.layer.masksToBounds = true
+        imageView.contentMode = .scaleAspectFill
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
     }()
     
     private lazy var replyImage :UIImageView = {
@@ -114,12 +123,20 @@ class FeedPostCell: UITableViewCell {
             postTextLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8)
         ])
         
+        contentView.addSubview(contentImage)
+        NSLayoutConstraint.activate([
+            contentImage.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
+            contentImage.leadingAnchor.constraint(equalTo: postTextLabel.leadingAnchor),
+            contentImage.heightAnchor.constraint(equalToConstant: 256),
+            contentImage.trailingAnchor.constraint(equalTo: postTextLabel.trailingAnchor),
+        ])
+        
         contentView.addSubview(replyImage)
         NSLayoutConstraint.activate([
             replyImage.widthAnchor.constraint(equalToConstant: 16),
             replyImage.heightAnchor.constraint(equalToConstant: 16),
             replyImage.leadingAnchor.constraint(equalTo: contentView.centerXAnchor, constant: -120),
-            replyImage.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
+            replyImage.topAnchor.constraint(equalTo: contentImage.bottomAnchor, constant: 8),
             replyImage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
         
@@ -134,7 +151,7 @@ class FeedPostCell: UITableViewCell {
             likeButton.widthAnchor.constraint(equalToConstant: 16),
             likeButton.heightAnchor.constraint(equalToConstant: 16),
             likeButton.leadingAnchor.constraint(equalTo: contentView.centerXAnchor, constant: 120),
-            likeButton.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
+            likeButton.topAnchor.constraint(equalTo: contentImage.bottomAnchor, constant: 8),
         ])
         
         contentView.addSubview(likeCountLabel)
@@ -144,34 +161,37 @@ class FeedPostCell: UITableViewCell {
         ])
     }
     
-    func configure(with post: HomePagePost) {
-        loadImage(from: post.profileImagePath) { url in
-            self.profileImage.kf.setImage(with: url)
+    func configure(post: Post) {
+        if let user = post.user {
+            nameLabel.text = user.name
+            usernameLabel.text = "@\(user.username)"
+            timeLabel.text = "Time"
+            postTextLabel.text = post.postText
+            replyCountLabel.text = String(post.replies.count)
+            likeCountLabel.text = String(post.likes.count)
+            self.profileImage.kf.setImage(with: URL(string: user.profileImageURL))
+            self.contentImage.kf.setImage(with: URL(string: post.contentImageURL))
+        } else {
+            FirebaseService.shared.fetchUser(userID: post.userID) { [weak self] user, error in
+                if let error = error {
+                    print("There was an error fetching user" + error.localizedDescription)
+                }
+                guard let user = user, let self = self else { return }
+                nameLabel.text = user.name
+                usernameLabel.text = "@\(user.username)"
+                timeLabel.text = "Time"
+                postTextLabel.text = post.postText
+                replyCountLabel.text = String(post.replies.count)
+                likeCountLabel.text = String(post.likes.count)
+                self.profileImage.kf.setImage(with: URL(string: user.profileImageURL))
+                self.contentImage.kf.setImage(with: URL(string: post.contentImageURL))
+            }
         }
-        nameLabel.text = post.name
-        usernameLabel.text = "@\(post.username)"
-        timeLabel.text = "Time"
-        postTextLabel.text = post.postText
-        replyCountLabel.text = String(post.replyCount)
-        likeCountLabel.text = String(post.likeCount)
     }
     
     @objc func didLikePost() {
         
     }
-    
-    func loadImage(from path: String, completion: @escaping (URL?) -> Void) {
-            let storage = Storage.storage()
-            let storageRef = storage.reference().child(path)
-            storageRef.downloadURL { (url, error) in
-                if let error = error {
-                    print("Error fetching image URL: \(error.localizedDescription)")
-                    completion(nil)
-                    return
-                }
-                completion(url)
-            }
-        }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -183,3 +203,5 @@ class FeedPostCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 }
+
+

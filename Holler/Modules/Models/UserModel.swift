@@ -13,11 +13,9 @@ struct User {
     let username: String
     let followers: [String]
     let following: [String]
-    let posts: [String]
-    let profileImageURL: String?
-    let bannerImageURL: String?
-    var profileImage = UIImageView()
-    var bannerImage = UIImageView()
+    var posts: [String]
+    let profileImageURL: String
+    let bannerImageURL: String
     
     init(uid: String, data: [String: Any]) {
         self.uid = uid
@@ -26,7 +24,7 @@ struct User {
         self.following = data["following"] as? [String] ?? [String]()
         self.posts = data["posts"] as? [String] ?? [String]()
         self.username = data["username"] as? String ?? ""
-        self.profileImageURL = data["profileURL"] as? String
-        self.bannerImageURL = data["bannerURL"] as? String
+        self.profileImageURL = data["profileURL"] as? String ?? ""
+        self.bannerImageURL = data["bannerURL"] as? String ?? ""
     }
 }

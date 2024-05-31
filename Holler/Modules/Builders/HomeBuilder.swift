@@ -12,6 +12,7 @@ final class HomeBuilder {
         let viewModel = HomeViewModel()
         let viewController = HomeViewController()
         viewController.viewModel = viewModel
+        viewModel.delegate = viewController
         return viewController
     }
 }
