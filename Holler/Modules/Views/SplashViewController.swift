@@ -55,6 +55,7 @@ extension SplashViewController: SplashViewModelDelegate {
     
     func navigateToHomePage() {
         guard let window = self.view.window else { return }
+        UserService.shared.clearCurrentUserFromKeychain()
         if let uid = try? keychain.get("uid"), !uid.isEmpty {
             UserService.shared.fetchCurrentUser { user, error in
                 if let error = error {

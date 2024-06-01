@@ -11,84 +11,19 @@ import FirebaseStorage
 import FirebaseFirestore
 
 final class PostCreateViewModel {
-    let db = Firestore.firestore()
-    let storage = Storage.storage()
+    
     weak var delegate: PostCreationDelegate?
+    weak var viewDelegate: PostCreateViewModelDelegate?
     
-    func createPost(text: String, imageData: Data?, completion: @escaping (Bool, Error?) -> Void) {
-        guard let currentUserUID = UserService.shared.currentUser?.uid else {
-            completion(false, NSError(domain: "User not logged in", code: 401, userInfo: nil))
-            return
-        }
-        
-        var postData: [String: Any] = [
-            "hasImage": false,
-            "image": "",
-            "likes": [],
-            "replies": [],
-            "text": text,
-            "userID": UserService.shared.currentUser!.uid,
-            "time": Int(Date().timeIntervalSince1970)
-        ]
-        
-        let postRef = db.collection("posts").document()
-        
-        if let imageData = imageData {
-            uploadImage(imageData, postID: postRef.documentID) { imageUrl, error in
-                if let error = error {
-                    completion(false, error)
-                    return
-                }
-                if let imageUrl = imageUrl {
-                    postData["hasImage"] = true
-                    postData["image"] = imageUrl.absoluteString
-                }
-                self.savePostData(postData, postRef: postRef, userID: currentUserUID, completion: completion)
-            }
-        } else {
-            savePostData(postData, postRef: postRef, userID: currentUserUID, completion: completion)
-        }
-    }
-    
-    private func uploadImage(_ imageData: Data?, postID: String, completion: @escaping (URL?, Error?) -> Void) {
-        guard let imageData = imageData else {
-            completion(nil, NSError(domain: "Image conversion error", code: 400, userInfo: nil))
-            return
-        }
-        let storageRef = storage.reference().child("posts/\(postID).jpg")
-        storageRef.putData(imageData, metadata: nil) { metadata, error in
+    func post(text: String, imageData: Data?) {
+        FirebaseService.shared.createPost(text: text, imageData: imageData) { success, error in
             if let error = error {
-                completion(nil, error)
-                return
+                print("There was an error creating a post: " + error.localizedDescription)
             }
-            let imagePath = "posts/\(postID).jpg"
-            FirebaseService.shared.getImageURL(from: imagePath) { url in
-                completion(url, nil)
+            if success {
+                self.delegate?.didPost()
+                self.viewDelegate?.didPost()
             }
-        }
-    }
-    
-    private func savePostData(_ postData: [String: Any], postRef: DocumentReference, userID: String, completion: @escaping (Bool, Error?) -> Void) {
-        postRef.setData(postData) { [weak self] error in
-            guard let self = self else { return }
-            if let error = error {
-                completion(false, error)
-                return
-            }
-            self.addPostToUser(postID: postRef.documentID, userID: userID, completion: completion)
-            self.delegate?.didPost()
-        }
-    }
-    
-    private func addPostToUser(postID: String, userID: String, completion: @escaping (Bool, Error?) -> Void) {
-        let userRef = db.collection("users").document(userID)
-        UserService.shared.currentUser!.posts.append(postID)
-        userRef.updateData(["posts": UserService.shared.currentUser!.posts]) { error in
-            if let error = error {
-                completion(false, error)
-                return
-            }
-            completion(true, nil)
         }
     }
 }

@@ -141,7 +141,7 @@ extension LogInViewController: LogInViewModelDelegate, ShowAlert {
         if success {
             guard let window = self.view.window else { return }
             let tabBarController = UITabBarController()
-            let searchViewController = SearchViewController()
+            let searchViewController = SearchScreenBuilder.create()
             let searchNavController = UINavigationController(rootViewController: searchViewController)
             searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
             let homeViewController = HomeBuilder.create()

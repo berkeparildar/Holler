@@ -7,6 +7,10 @@
 
 import UIKit
 
+protocol PostCreateViewModelDelegate: AnyObject {
+    func didPost()
+}
+
 class PostCreateViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITextFieldDelegate {
     
     var viewModel: PostCreateViewModel!
@@ -117,19 +121,11 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
     }
     
     @objc private func textFieldDidChange() {
-            validatePostButton()
+        validatePostButton()
     }
     
     @objc private func didTapPost() {
-        viewModel.createPost(text: textField.text!, imageData: selectedImageView.image?.jpegData(compressionQuality: 0.8)) { [weak self] success, error in
-            guard let self = self else { return }
-            if let error = error {
-                print("There was an error creating post: " + error.localizedDescription)
-            }
-            if success {
-                self.dismiss(animated: true)
-            }
-        }
+        viewModel.post(text: textField.text!, imageData: selectedImageView.image?.jpegData(compressionQuality: 0.8))
     }
     
     @objc private func didTapRemoveImage() {
@@ -158,10 +154,16 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
-            validatePostButton()
-        }
-        
-        func textFieldDidEndEditing(_ textField: UITextField) {
-            validatePostButton()
-        }
+        validatePostButton()
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        validatePostButton()
+    }
+}
+
+extension PostCreateViewController: PostCreateViewModelDelegate {
+    func didPost() {
+        dismiss(animated: true)
+    }
 }

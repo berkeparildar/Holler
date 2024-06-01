@@ -12,6 +12,7 @@ final class PostCreateScreenBuilder {
         let viewController = PostCreateViewController()
         let viewModel = PostCreateViewModel()
         viewModel.delegate = delegate
+        viewModel.viewDelegate = viewController
         viewController.viewModel = viewModel
         return viewController
     }

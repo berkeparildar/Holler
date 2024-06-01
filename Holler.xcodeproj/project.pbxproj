@@ -41,6 +41,9 @@
 		623221962C079BA80055B8A4 /* PostCreateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623221952C079BA80055B8A4 /* PostCreateViewController.swift */; };
 		623221982C079BB20055B8A4 /* PostCreateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623221972C079BB20055B8A4 /* PostCreateViewModel.swift */; };
 		6245703F2C0908BE0094B47C /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6245703E2C0908BE0094B47C /* FirebaseService.swift */; };
+		624570462C0AA54B0094B47C /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 624570452C0AA54B0094B47C /* SearchViewModel.swift */; };
+		624570482C0AAB600094B47C /* SearchScreenBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 624570472C0AAB600094B47C /* SearchScreenBuilder.swift */; };
+		6245704A2C0AABBB0094B47C /* UserCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 624570492C0AABBB0094B47C /* UserCell.swift */; };
 		6271CA1C2BFB5FEB00989407 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6271CA1B2BFB5FEB00989407 /* ProfileViewController.swift */; };
 		6271CA1E2BFB600000989407 /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6271CA1D2BFB600000989407 /* ProfileViewModel.swift */; };
 		6271CA212BFB822900989407 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6271CA202BFB822900989407 /* SearchViewController.swift */; };
@@ -80,6 +83,9 @@
 		623221952C079BA80055B8A4 /* PostCreateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCreateViewController.swift; sourceTree = "<group>"; };
 		623221972C079BB20055B8A4 /* PostCreateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCreateViewModel.swift; sourceTree = "<group>"; };
 		6245703E2C0908BE0094B47C /* FirebaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
+		624570452C0AA54B0094B47C /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		624570472C0AAB600094B47C /* SearchScreenBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchScreenBuilder.swift; sourceTree = "<group>"; };
+		624570492C0AABBB0094B47C /* UserCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCell.swift; sourceTree = "<group>"; };
 		6271CA1B2BFB5FEB00989407 /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
 		6271CA1D2BFB600000989407 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		6271CA202BFB822900989407 /* SearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
@@ -207,6 +213,7 @@
 			children = (
 				6296DFB32BF4F1D700A93BD0 /* PostCell.swift */,
 				6214DC202C07F915007BD141 /* PostImageCell.swift */,
+				624570492C0AABBB0094B47C /* UserCell.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -220,6 +227,7 @@
 				6296DFAB2BF4E8F300A93BD0 /* HomeViewModel.swift */,
 				623221972C079BB20055B8A4 /* PostCreateViewModel.swift */,
 				6271CA1D2BFB600000989407 /* ProfileViewModel.swift */,
+				624570452C0AA54B0094B47C /* SearchViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -242,6 +250,7 @@
 				6271CA272BFB88C900989407 /* HomeBuilder.swift */,
 				6214DC1E2C07CA6E007BD141 /* PostCreateScreenBuilder.swift */,
 				623221922C0747A40055B8A4 /* ProfileScreenBuilder.swift */,
+				624570472C0AAB600094B47C /* SearchScreenBuilder.swift */,
 			);
 			path = Builders;
 			sourceTree = "<group>";
@@ -363,6 +372,7 @@
 				621A9AF22BF2176C003EAE8D /* AppDelegate.swift in Sources */,
 				621A9B562BF23BCC003EAE8D /* SignUpViewController.swift in Sources */,
 				6214DC1F2C07CA6E007BD141 /* PostCreateScreenBuilder.swift in Sources */,
+				624570482C0AAB600094B47C /* SearchScreenBuilder.swift in Sources */,
 				6296DFAC2BF4E8F300A93BD0 /* HomeViewModel.swift in Sources */,
 				621A9B4F2BF22DD2003EAE8D /* LogInViewController.swift in Sources */,
 				6245703F2C0908BE0094B47C /* FirebaseService.swift in Sources */,
@@ -372,11 +382,13 @@
 				623221932C0747A40055B8A4 /* ProfileScreenBuilder.swift in Sources */,
 				621A9AF42BF2176C003EAE8D /* SceneDelegate.swift in Sources */,
 				6271CA212BFB822900989407 /* SearchViewController.swift in Sources */,
+				6245704A2C0AABBB0094B47C /* UserCell.swift in Sources */,
 				6296DFAE2BF4E90400A93BD0 /* HomeViewController.swift in Sources */,
 				623221982C079BB20055B8A4 /* PostCreateViewModel.swift in Sources */,
 				621A9B5A2BF23BE8003EAE8D /* SignUpScreenBuilder.swift in Sources */,
 				62EE356A2BF9618900708DA4 /* UserModel.swift in Sources */,
 				62EE356D2BF961AB00708DA4 /* UserService.swift in Sources */,
+				624570462C0AA54B0094B47C /* SearchViewModel.swift in Sources */,
 				621A9B732BF29D09003EAE8D /* SuccessDialogue.swift in Sources */,
 				6214DC212C07F915007BD141 /* PostImageCell.swift in Sources */,
 				6271CA1E2BFB600000989407 /* ProfileViewModel.swift in Sources */,
