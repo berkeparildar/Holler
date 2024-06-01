@@ -129,6 +129,57 @@ final class FirebaseService {
         }
     }
     
+    func followUser(targetUserID: String, currentUserID: String, completion: @escaping (Error?) -> Void) {
+        let userRef = db.collection("users")
+        let targetUserRef = userRef.document(targetUserID)
+        let currentUserRef = userRef.document(currentUserID)
+        let batch = db.batch()
+        batch.updateData([
+            "followers": FieldValue.arrayUnion([currentUserID])
+        ], forDocument: targetUserRef)
+        
+        batch.updateData([
+            "following": FieldValue.arrayUnion([targetUserID])
+        ], forDocument: currentUserRef)
+        batch.commit { error in
+            completion(error)
+        }
+    }
+    
+    func unfollowUser(targetUserID: String, currentUserID: String, completion: @escaping (Error?) -> Void) {
+        let userRef = db.collection("users")
+        let targetUserRef = userRef.document(targetUserID)
+        let currentUserRef = userRef.document(currentUserID)
+        let batch = db.batch()
+        batch.updateData([
+            "followers": FieldValue.arrayRemove([currentUserID])
+        ], forDocument: targetUserRef)
+        batch.updateData([
+            "following": FieldValue.arrayRemove([targetUserID])
+        ], forDocument: currentUserRef)
+        batch.commit { error in
+            completion(error)
+        }
+    }
+    
+    func likePost(postID: String, completion: @escaping (Error?) -> Void) {
+        let postRef = db.collection("posts").document(postID)
+        postRef.updateData([
+            "likes": FieldValue.arrayUnion([UserService.shared.currentUser!.uid])
+        ]) { error in
+            completion(error)
+        }
+    }
+    
+    func unlikePost(postID: String, completion: @escaping (Error?) -> Void) {
+        let postRef = db.collection("posts").document(postID)
+        postRef.updateData([
+            "likes": FieldValue.arrayRemove([UserService.shared.currentUser!.uid])
+        ]) { error in
+            completion(error)
+        }
+    }
+    
     func uploadImage(_ imageData: Data?, postID: String, completion: @escaping (URL?, Error?) -> Void) {
         guard let imageData = imageData else {
             completion(nil, NSError(domain: "Image conversion error", code: 400, userInfo: nil))

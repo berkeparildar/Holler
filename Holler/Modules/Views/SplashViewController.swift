@@ -9,6 +9,11 @@ import UIKit
 import FirebaseAuth
 import KeychainAccess
 
+protocol LikeSyncDelegate: AnyObject {
+    func unlikedPost(postID: String)
+    func likedPost(postID: String)
+}
+
 class SplashViewController: UIViewController, ShowAlert {
     private let keychain = Keychain(service: "com.bprldr.Holler")
     var viewModel: SplashViewModel!
@@ -55,7 +60,6 @@ extension SplashViewController: SplashViewModelDelegate {
     
     func navigateToHomePage() {
         guard let window = self.view.window else { return }
-        UserService.shared.clearCurrentUserFromKeychain()
         if let uid = try? keychain.get("uid"), !uid.isEmpty {
             UserService.shared.fetchCurrentUser { user, error in
                 if let error = error {
@@ -63,7 +67,7 @@ extension SplashViewController: SplashViewModelDelegate {
                 }
                 if let user = user {
                     let tabBarController = UITabBarController()
-                    let searchViewController = SearchViewController()
+                    let searchViewController = SearchScreenBuilder.create()
                     let searchNavController = UINavigationController(rootViewController: searchViewController)
                     searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
                     let homeViewController = HomeBuilder.create()
@@ -72,6 +76,8 @@ extension SplashViewController: SplashViewModelDelegate {
                     let profileViewController = ProfileScreenBuilder.create(userID: user.uid, user: user)
                     let profileNavController = UINavigationController(rootViewController: profileViewController)
                     profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
+                    homeViewController.likeSyncDelegate = profileViewController
+                    profileViewController.likeSyncDelegate = homeViewController
                     tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
                     window.rootViewController = tabBarController
                 }

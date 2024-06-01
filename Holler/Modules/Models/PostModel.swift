@@ -15,7 +15,7 @@ struct Post {
     let hasImage: Bool
     let contentImageURL: String
     let replies: [String]
-    let likes: [String]
+    var likes: [String]
     let user: User?
     
     init(id: String, data: [String: Any], user: User?) {

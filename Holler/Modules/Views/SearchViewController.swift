@@ -18,7 +18,8 @@ class SearchViewController: UIViewController {
     private var searchResults: [User] = []
     
     private var searchDebounceTimer: Timer?
-    private let debounceInterval: TimeInterval = 2.0
+    private let debounceInterval: TimeInterval = 1
+    private var isSearchCancelled = false
     
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -41,6 +42,7 @@ class SearchViewController: UIViewController {
     private func configureSearchController() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.delegate = self
         searchController.searchBar.placeholder = "Search for users by username"
         searchController.searchBar.autocorrectionType = .no
         searchController.searchBar.autocapitalizationType = .none
@@ -69,17 +71,32 @@ extension SearchViewController: UITableViewDataSource, UITableViewDelegate {
         cell.configure(user: searchResults[indexPath.row])
         return cell
     }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let user = searchResults[indexPath.row]
+        let profileView = ProfileScreenBuilder.create(userID: user.uid, user: user)
+        navigationController?.pushViewController(profileView, animated: true)
+    }
 }
 
-extension SearchViewController: UISearchResultsUpdating {
+extension SearchViewController: UISearchResultsUpdating, UISearchBarDelegate {
     func updateSearchResults(for searchController: UISearchController) {
         guard let searchText = searchController.searchBar.text else { return }
         searchDebounceTimer?.invalidate()
         searchDebounceTimer = Timer.scheduledTimer(withTimeInterval: debounceInterval, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            print("fetch called")
+            guard let self = self, !self.isSearchCancelled else {
+                self?.isSearchCancelled = false
+                return
+            }
+            print("update called")
             viewModel.fetchUser(search: searchText)
         }
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        print("cancel called")
+        isSearchCancelled = true
+        searchResults.removeAll()
         tableView.reloadData()
     }
 }

@@ -15,10 +15,16 @@ protocol HomeViewModelDelegate: AnyObject {
     func didFetchPosts(posts: [Post])
 }
 
+protocol CellDelegate: AnyObject {
+    func didLikePost(postID: String)
+    func didUnlikePost(postID: String)
+}
+
 class HomeViewController: UIViewController {
     
     var viewModel: HomeViewModel!
     var posts: [Post] = []
+    weak var likeSyncDelegate: LikeSyncDelegate?
     
     private lazy var createPostButton: UIButton = {
         let button = UIButton(type: .system)
@@ -33,6 +39,7 @@ class HomeViewController: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(PostCell.self, forCellReuseIdentifier: "postCell")
+        tableView.delaysContentTouches = false
         tableView.register(PostImageCell.self, forCellReuseIdentifier: "postImageCell")
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 300
@@ -49,7 +56,7 @@ class HomeViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.title = "Home"
+        self.title = "Feed"
         showLoading()
         setupViews()
         viewModel.fetchPostsForHomePage()
@@ -106,10 +113,12 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         let post = posts[indexPath.row]
         if post.hasImage {
             let cell = tableView.dequeueReusableCell(withIdentifier: "postImageCell", for: indexPath) as! PostImageCell
+            cell.delegate = self
             cell.configure(post: posts[indexPath.row])
             return cell
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! PostCell
+        cell.delegate = self
         cell.configure(post: posts[indexPath.row])
         return cell
     }
@@ -133,5 +142,48 @@ extension HomeViewController: HomeViewModelDelegate {
         self.posts = posts
         tableView.reloadData()
         hideLoading()
+    }
+}
+
+extension HomeViewController: CellDelegate {
+    func didLikePost(postID: String) {
+        let likedPost = posts.firstIndex { post in
+            post.id == postID
+        }
+        posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
+        viewModel.didLikePost(postID: postID)
+        likeSyncDelegate?.likedPost(postID: postID)
+    }
+    
+    func didUnlikePost(postID: String) {
+        let unlikedPost = posts.firstIndex { post in
+            post.id == postID
+        }
+        if let index = posts[unlikedPost!].likes.firstIndex(of: UserService.shared.currentUser!.uid) {
+            posts[unlikedPost!].likes.remove(at: index)
+        }
+        viewModel.didUnlikePost(postID: postID)
+        likeSyncDelegate?.unlikedPost(postID: postID)
+    }
+}
+
+extension HomeViewController: LikeSyncDelegate {
+    func unlikedPost(postID: String) {
+        let unlikedPost = posts.firstIndex { post in
+            post.id == postID
+        }
+        if let index = posts[unlikedPost!].likes.firstIndex(of: UserService.shared.currentUser!.uid) {
+            posts[unlikedPost!].likes.remove(at: index)
+        }
+        tableView.reloadData()
+    }
+    
+    func likedPost(postID: String) {
+        let likedPost = posts.firstIndex { post in
+            post.id == postID
+        }
+        posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
+        tableView.reloadData()
+       
     }
 }

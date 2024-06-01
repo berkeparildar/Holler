@@ -137,7 +137,7 @@ class LogInViewController: UIViewController {
 }
 
 extension LogInViewController: LogInViewModelDelegate, ShowAlert {
-    func logInOutput(success: Bool) {
+    func logInOutput(success: Bool, user: User?) {
         if success {
             guard let window = self.view.window else { return }
             let tabBarController = UITabBarController()
@@ -147,7 +147,7 @@ extension LogInViewController: LogInViewModelDelegate, ShowAlert {
             let homeViewController = HomeBuilder.create()
             let homeNavController = UINavigationController(rootViewController: homeViewController)
             homeNavController.tabBarItem = UITabBarItem(title: "Feed", image: UIImage(systemName: "newspaper.fill"), tag: 1)
-            let profileViewController = ProfileScreenBuilder.create(userID: UserService.shared.currentUser!.uid)
+            let profileViewController = ProfileScreenBuilder.create(userID: UserService.shared.currentUser!.uid, user: user)
             let profileNavController = UINavigationController(rootViewController: profileViewController)
             profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
             tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]

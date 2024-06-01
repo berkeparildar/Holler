@@ -9,7 +9,11 @@ import UIKit
 import FirebaseStorage
 
 class PostCell: UITableViewCell {
-        
+    
+    var post: Post!
+    var isLiked: Bool = false
+    weak var delegate: CellDelegate?
+    
     private lazy var profileImage: UIImageView = {
         let imageView = UIImageView()
         imageView.layer.cornerRadius = 16
@@ -20,7 +24,7 @@ class PostCell: UITableViewCell {
     
     private lazy var nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .boldSystemFont(ofSize: 14)
+        label.font = .boldSystemFont(ofSize: 16)
         label.textColor = .white
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -71,6 +75,7 @@ class PostCell: UITableViewCell {
         let button = UIButton()
         button.setImage(UIImage(systemName: "heart"), for: .normal)
         button.imageView?.contentMode = .scaleAspectFit
+        button.tintColor = .red
         button.addTarget(self, action: #selector(didLikePost), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -86,69 +91,61 @@ class PostCell: UITableViewCell {
     
     private func setupViews() {
         contentView.addSubview(profileImage)
+        contentView.addSubview(nameLabel)
+        contentView.addSubview(usernameLabel)
+        contentView.addSubview(timeLabel)
+        contentView.addSubview(postTextLabel)
+        contentView.addSubview(likeCountLabel)
+        contentView.addSubview(likeButton)
+        contentView.addSubview(replyCountLabel)
+        contentView.addSubview(replyImage)
+        
         NSLayoutConstraint.activate([
             profileImage.heightAnchor.constraint(equalToConstant: 32),
             profileImage.widthAnchor.constraint(equalToConstant: 32),
             profileImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             profileImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-        ])
-        contentView.addSubview(nameLabel)
-        NSLayoutConstraint.activate([
+            
             nameLabel.leadingAnchor.constraint(equalTo: profileImage.trailingAnchor, constant: 8),
             nameLabel.topAnchor.constraint(equalTo: profileImage.topAnchor),
-        ])
-        contentView.addSubview(usernameLabel)
-        NSLayoutConstraint.activate([
-            usernameLabel.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: 8),
-            usernameLabel.topAnchor.constraint(equalTo: profileImage.topAnchor)
-        ])
-        contentView.addSubview(timeLabel)
-        NSLayoutConstraint.activate([
-            timeLabel.leadingAnchor.constraint(equalTo: usernameLabel.trailingAnchor, constant: 8),
-            timeLabel.topAnchor.constraint(equalTo: profileImage.topAnchor)
-        ])
-        contentView.addSubview(postTextLabel)
-        NSLayoutConstraint.activate([
+            
+            usernameLabel.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: 6),
+            usernameLabel.bottomAnchor.constraint(equalTo: nameLabel.bottomAnchor),
+            
+            timeLabel.leadingAnchor.constraint(equalTo: usernameLabel.trailingAnchor, constant: 6),
+            timeLabel.bottomAnchor.constraint(equalTo: usernameLabel.bottomAnchor),
+            
             postTextLabel.leadingAnchor.constraint(equalTo: nameLabel.leadingAnchor),
             postTextLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            postTextLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8)
-        ])
-        
-        contentView.addSubview(replyImage)
-        NSLayoutConstraint.activate([
-            replyImage.widthAnchor.constraint(equalToConstant: 16),
-            replyImage.heightAnchor.constraint(equalToConstant: 16),
-            replyImage.leadingAnchor.constraint(equalTo: contentView.centerXAnchor, constant: -120),
-            replyImage.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
-            replyImage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
-        ])
-        
-        contentView.addSubview(replyCountLabel)
-        NSLayoutConstraint.activate([
-            replyCountLabel.leadingAnchor.constraint(equalTo: replyImage.trailingAnchor, constant: 4),
-            replyCountLabel.centerYAnchor.constraint(equalTo: replyImage.centerYAnchor)
-        ])
-        
-        contentView.addSubview(likeButton)
-        NSLayoutConstraint.activate([
+            postTextLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 2),
+            
+            likeCountLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            likeCountLabel.centerYAnchor.constraint(equalTo: likeButton.centerYAnchor),
+            
             likeButton.widthAnchor.constraint(equalToConstant: 16),
             likeButton.heightAnchor.constraint(equalToConstant: 16),
-            likeButton.leadingAnchor.constraint(equalTo: contentView.centerXAnchor, constant: 120),
+            likeButton.trailingAnchor.constraint(equalTo: likeCountLabel.trailingAnchor, constant: -12),
             likeButton.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
-        ])
-        
-        contentView.addSubview(likeCountLabel)
-        NSLayoutConstraint.activate([
-            likeCountLabel.leadingAnchor.constraint(equalTo: likeButton.trailingAnchor, constant: 4),
-            likeCountLabel.centerYAnchor.constraint(equalTo: likeButton.centerYAnchor)
+            
+            replyCountLabel.trailingAnchor.constraint(equalTo: likeButton.leadingAnchor, constant: -16),
+            replyCountLabel.centerYAnchor.constraint(equalTo: replyImage.centerYAnchor),
+            
+            replyImage.widthAnchor.constraint(equalToConstant: 16),
+            replyImage.heightAnchor.constraint(equalToConstant: 16),
+            replyImage.trailingAnchor.constraint(equalTo: replyCountLabel.trailingAnchor, constant: -12),
+            replyImage.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
+            replyImage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
     }
     
     func configure(post: Post) {
+        self.post = post
         if let user = post.user {
             nameLabel.text = user.name
             usernameLabel.text = "@\(user.username)"
-            timeLabel.text = "Time"
+            let currentTime = Date().timeIntervalSince1970
+            let postTimeDifference = currentTime - TimeInterval(post.time)
+            timeLabel.text = postTimeDifference.formattedTimeString
             postTextLabel.text = post.postText
             replyCountLabel.text = String(post.replies.count)
             likeCountLabel.text = String(post.likes.count)
@@ -161,17 +158,41 @@ class PostCell: UITableViewCell {
                 guard let user = user, let self = self else { return }
                 nameLabel.text = user.name
                 usernameLabel.text = "@\(user.username)"
-                timeLabel.text = "Time"
+                let currentTime = Date().timeIntervalSince1970
+                let postTimeDifference = currentTime - TimeInterval(post.time)
+                timeLabel.text = postTimeDifference.formattedTimeString
                 postTextLabel.text = post.postText
                 replyCountLabel.text = String(post.replies.count)
                 likeCountLabel.text = String(post.likes.count)
                 self.profileImage.kf.setImage(with: URL(string: user.profileImageURL))
             }
         }
+        if post.likes.contains(UserService.shared.currentUser!.uid) {
+            likeButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
+            isLiked = true
+        } else {
+            likeButton.setImage(UIImage(systemName: "heart"), for: .normal)
+            isLiked = false
+        }
     }
     
     @objc func didLikePost() {
-        
+        UIView.animate(withDuration: 0.2) { [weak self] in
+            guard let self = self else { return }
+            if isLiked {
+                likeButton.setImage(UIImage(systemName: "heart"), for: .normal)
+                var currentLikeCount = post.likes.count
+                currentLikeCount -= 1
+                likeCountLabel.text = "\(currentLikeCount)"
+                delegate?.didUnlikePost(postID: post.id)
+            } else {
+                likeButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
+                var currentLikeCount = post.likes.count
+                currentLikeCount += 1
+                likeCountLabel.text = "\(currentLikeCount)"
+                delegate?.didLikePost(postID: post.id)
+            }
+        }
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {

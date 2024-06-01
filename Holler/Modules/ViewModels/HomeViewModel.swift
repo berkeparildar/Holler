@@ -52,4 +52,20 @@ final class HomeViewModel {
             self.delegate?.didFetchPosts(posts: posts)
         }
     }
+    
+    func didLikePost(postID: String) {
+        FirebaseService.shared.likePost(postID: postID) { error in
+            if let error = error {
+                print("There was a problem liking post: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func didUnlikePost(postID: String) {
+        FirebaseService.shared.unlikePost(postID: postID) { error in
+            if let error = error {
+                print("There was a problem unliking post: \(error.localizedDescription)")
+            }
+        }
+    }
 }

@@ -11,8 +11,8 @@ struct User {
     let uid: String
     let name: String
     let username: String
-    let followers: [String]
-    let following: [String]
+    var followers: [String]
+    var following: [String]
     var posts: [String]
     let profileImageURL: String
     let bannerImageURL: String

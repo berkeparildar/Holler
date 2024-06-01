@@ -79,11 +79,47 @@ final class ProfileViewModel {
     }
     
     func fetchPostsForProfile() {
-        var posts = [Post]()
-        if user != nil {
+        guard let user = user else { return }
+        if user.uid == UserService.shared.currentUser?.uid {
             fetchOwnPosts()
         } else {
             fetchTargetPosts()
+        }
+    }
+    
+    func followUser(targetID: String, currentID: String) {
+        FirebaseService.shared.followUser(targetUserID: targetID, currentUserID: currentID) { [weak self] error in
+            guard let self = self else { return }
+            if let error = error {
+                print("There was an error following the user: \(error.localizedDescription)")
+            }
+            delegate?.didFollowUser()
+        }
+    }
+    
+    func unfollowUser(targetID: String, currentID: String) {
+        FirebaseService.shared.unfollowUser(targetUserID: targetID, currentUserID: currentID) { [weak self] error in
+            guard let self = self else { return }
+            if let error = error {
+                print("There was an error following the user: \(error.localizedDescription)")
+            }
+            delegate?.didUnfollowUser()
+        }
+    }
+    
+    func didLikePost(postID: String) {
+        FirebaseService.shared.likePost(postID: postID) { error in
+            if let error = error {
+                print("There was a problem liking post: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func didUnlikePost(postID: String) {
+        FirebaseService.shared.unlikePost(postID: postID) { error in
+            if let error = error {
+                print("There was a problem unliking post: \(error.localizedDescription)")
+            }
         }
     }
 }
