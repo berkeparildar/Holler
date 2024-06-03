@@ -14,12 +14,18 @@ class PostCell: UITableViewCell {
     var isLiked: Bool = false
     weak var delegate: CellDelegate?
     
-    private lazy var profileImage: UIImageView = {
-        let imageView = UIImageView()
-        imageView.layer.cornerRadius = 16
-        imageView.layer.masksToBounds = true
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
+    private lazy var profileImage: UIButton = {
+        let button = UIButton(type: .custom)
+        button.layer.cornerRadius = 16
+        button.layer.masksToBounds = true
+        button.backgroundColor = .clear
+        button.setImage(UIImage(systemName: "heart"), for: .normal)
+        button.imageView?.contentMode = .scaleAspectFit
+        button.imageView?.layer.cornerRadius = 16
+        button.imageView?.layer.masksToBounds = true
+        button.addTarget(self, action: #selector(didTapProfileImage), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
     }()
     
     private lazy var nameLabel: UILabel = {
@@ -138,6 +144,10 @@ class PostCell: UITableViewCell {
         ])
     }
     
+    func disableProfileImageButton() {
+        self.profileImage.isUserInteractionEnabled = false
+    }
+    
     func configure(post: Post) {
         self.post = post
         if let user = post.user {
@@ -149,7 +159,7 @@ class PostCell: UITableViewCell {
             postTextLabel.text = post.postText
             replyCountLabel.text = String(post.replies.count)
             likeCountLabel.text = String(post.likes.count)
-            self.profileImage.kf.setImage(with: URL(string: user.profileImageURL))
+            self.profileImage.kf.setImage(with: URL(string: user.profileImageURL), for: .normal)
         } else {
             FirebaseService.shared.fetchUser(userID: post.userID) { [weak self] user, error in
                 if let error = error {
@@ -164,7 +174,7 @@ class PostCell: UITableViewCell {
                 postTextLabel.text = post.postText
                 replyCountLabel.text = String(post.replies.count)
                 likeCountLabel.text = String(post.likes.count)
-                self.profileImage.kf.setImage(with: URL(string: user.profileImageURL))
+                self.profileImage.kf.setImage(with: URL(string: user.profileImageURL), for: .normal)
             }
         }
         if post.likes.contains(UserService.shared.currentUser!.uid) {
@@ -181,18 +191,16 @@ class PostCell: UITableViewCell {
             guard let self = self else { return }
             if isLiked {
                 likeButton.setImage(UIImage(systemName: "heart"), for: .normal)
-                var currentLikeCount = post.likes.count
-                currentLikeCount -= 1
-                likeCountLabel.text = "\(currentLikeCount)"
                 delegate?.didUnlikePost(postID: post.id)
             } else {
                 likeButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
-                var currentLikeCount = post.likes.count
-                currentLikeCount += 1
-                likeCountLabel.text = "\(currentLikeCount)"
                 delegate?.didLikePost(postID: post.id)
             }
         }
+    }
+    
+    @objc func didTapProfileImage() {
+        delegate?.didTapUserProfile(userID: post.userID, user: post.user)
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {

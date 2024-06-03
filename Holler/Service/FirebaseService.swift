@@ -130,6 +130,7 @@ final class FirebaseService {
     }
     
     func followUser(targetUserID: String, currentUserID: String, completion: @escaping (Error?) -> Void) {
+        UserService.shared.currentUser!.following.append(targetUserID)
         let userRef = db.collection("users")
         let targetUserRef = userRef.document(targetUserID)
         let currentUserRef = userRef.document(currentUserID)
@@ -147,6 +148,10 @@ final class FirebaseService {
     }
     
     func unfollowUser(targetUserID: String, currentUserID: String, completion: @escaping (Error?) -> Void) {
+        let index = UserService.shared.currentUser!.following.firstIndex { userID in
+            userID == targetUserID
+        }
+        UserService.shared.currentUser!.following.remove(at: index!)
         let userRef = db.collection("users")
         let targetUserRef = userRef.document(targetUserID)
         let currentUserRef = userRef.document(currentUserID)

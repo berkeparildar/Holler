@@ -76,7 +76,6 @@ extension SplashViewController: SplashViewModelDelegate {
                     let profileViewController = ProfileScreenBuilder.create(userID: user.uid, user: user)
                     let profileNavController = UINavigationController(rootViewController: profileViewController)
                     profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
-                    homeViewController.likeSyncDelegate = profileViewController
                     profileViewController.likeSyncDelegate = homeViewController
                     tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
                     window.rootViewController = tabBarController

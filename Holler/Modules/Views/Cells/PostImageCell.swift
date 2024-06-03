@@ -14,12 +14,16 @@ class PostImageCell: UITableViewCell {
     var isLiked: Bool = false
     weak var delegate: CellDelegate?
     
-    private lazy var profileImage: UIImageView = {
-        let imageView = UIImageView()
-        imageView.layer.cornerRadius = 16
-        imageView.layer.masksToBounds = true
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
+    private lazy var profileImage: UIButton = {
+        let button = UIButton(type: .custom)
+        button.backgroundColor = .clear
+        button.layer.cornerRadius = 16
+        button.setImage(UIImage(systemName: "heart"), for: .normal)
+        button.imageView?.contentMode = .scaleAspectFit
+        button.addTarget(self, action: #selector(didTapProfileImage), for: .touchUpInside)
+        button.layer.masksToBounds = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
     }()
     
     private lazy var contentImage: UIImageView = {
@@ -157,11 +161,13 @@ class PostImageCell: UITableViewCell {
         if let user = post.user {
             nameLabel.text = user.name
             usernameLabel.text = "@\(user.username)"
-            timeLabel.text = "Time"
+            let currentTime = Date().timeIntervalSince1970
+            let postTimeDifference = currentTime - TimeInterval(post.time)
+            timeLabel.text = postTimeDifference.formattedTimeString
             postTextLabel.text = post.postText
             replyCountLabel.text = String(post.replies.count)
             likeCountLabel.text = String(post.likes.count)
-            self.profileImage.kf.setImage(with: URL(string: user.profileImageURL))
+            self.profileImage.kf.setImage(with: URL(string: user.profileImageURL), for: .normal)
             self.contentImage.kf.setImage(with: URL(string: post.contentImageURL))
         } else {
             FirebaseService.shared.fetchUser(userID: post.userID) { [weak self] user, error in
@@ -171,11 +177,13 @@ class PostImageCell: UITableViewCell {
                 guard let user = user, let self = self else { return }
                 nameLabel.text = user.name
                 usernameLabel.text = "@\(user.username)"
-                timeLabel.text = "Time"
+                let currentTime = Date().timeIntervalSince1970
+                let postTimeDifference = currentTime - TimeInterval(post.time)
+                timeLabel.text = postTimeDifference.formattedTimeString
                 postTextLabel.text = post.postText
                 replyCountLabel.text = String(post.replies.count)
                 likeCountLabel.text = String(post.likes.count)
-                self.profileImage.kf.setImage(with: URL(string: user.profileImageURL))
+                self.profileImage.kf.setImage(with: URL(string: user.profileImageURL), for: .normal)
                 self.contentImage.kf.setImage(with: URL(string: post.contentImageURL))
             }
         }
@@ -205,6 +213,14 @@ class PostImageCell: UITableViewCell {
                 delegate?.didLikePost(postID: post.id)
             }
         }
+    }
+    
+    @objc func didTapProfileImage() {
+        delegate?.didTapUserProfile(userID: post.userID, user: post.user)
+    }
+    
+    func disableProfileImageButton() {
+        self.profileImage.isUserInteractionEnabled = false
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {

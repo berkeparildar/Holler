@@ -18,17 +18,21 @@ protocol HomeViewModelDelegate: AnyObject {
 protocol CellDelegate: AnyObject {
     func didLikePost(postID: String)
     func didUnlikePost(postID: String)
+    func didTapUserProfile(userID: String, user: User?)
 }
 
 class HomeViewController: UIViewController {
     
     var viewModel: HomeViewModel!
     var posts: [Post] = []
-    weak var likeSyncDelegate: LikeSyncDelegate?
+    private let refreshControl = UIRefreshControl()
     
     private lazy var createPostButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "plus"), for: .normal)
+        button.tintColor = .black
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 18
         button.addTarget(self, action: #selector(didTapCreatePostButton), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -59,6 +63,7 @@ class HomeViewController: UIViewController {
         self.title = "Feed"
         showLoading()
         setupViews()
+        setupRefreshControl()
         viewModel.fetchPostsForHomePage()
     }
     
@@ -84,6 +89,15 @@ class HomeViewController: UIViewController {
             progressView.heightAnchor.constraint(equalToConstant: 32),
             progressView.widthAnchor.constraint(equalToConstant: 32)
         ])
+    }
+    
+    private func setupRefreshControl() {
+        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        tableView.refreshControl = refreshControl
+    }
+    
+    @objc private func refreshData() {
+        viewModel.fetchPostsForHomePage()
     }
     
     @objc func didTapCreatePostButton() {
@@ -139,31 +153,54 @@ extension HomeViewController: PostCreationDelegate {
 
 extension HomeViewController: HomeViewModelDelegate {
     func didFetchPosts(posts: [Post]) {
-        self.posts = posts
-        tableView.reloadData()
-        hideLoading()
+        self.posts = posts.sorted(by: { $0.time > $1.time })
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.refreshControl.endRefreshing()
+            self.tableView.reloadData()
+            self.hideLoading()
+        }
     }
 }
 
 extension HomeViewController: CellDelegate {
+    func didTapUserProfile(userID: String, user: User?) {
+        if userID == UserService.shared.currentUser!.uid {
+            guard let tabBarController = self.tabBarController else { return }
+            UIView.transition(with: tabBarController.view, duration: 0.3, options: .transitionCrossDissolve, animations: {
+                tabBarController.selectedIndex = 2
+            }, completion: nil)
+        } else {
+            let profileView = ProfileScreenBuilder.create(userID: userID, user: user)
+            self.navigationController?.pushViewController(profileView, animated: true)
+        }
+    }
+    
     func didLikePost(postID: String) {
-        let likedPost = posts.firstIndex { post in
+        let likedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
-        posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
+        guard let likedPostIndex = likedPostIndex else { return }
+        posts[likedPostIndex].likes.append(UserService.shared.currentUser!.uid)
         viewModel.didLikePost(postID: postID)
-        likeSyncDelegate?.likedPost(postID: postID)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            tableView.reloadRows(at: [IndexPath(row: likedPostIndex, section: 0)], with: .none)
+        }
     }
     
     func didUnlikePost(postID: String) {
-        let unlikedPost = posts.firstIndex { post in
+        let unlikedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
-        if let index = posts[unlikedPost!].likes.firstIndex(of: UserService.shared.currentUser!.uid) {
-            posts[unlikedPost!].likes.remove(at: index)
+        guard let unlikedPostIndex = unlikedPostIndex else { return }
+        if let index = posts[unlikedPostIndex].likes.firstIndex(of: UserService.shared.currentUser!.uid) {
+            posts[unlikedPostIndex].likes.remove(at: index)
+            viewModel.didUnlikePost(postID: postID)
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                tableView.reloadRows(at: [IndexPath(row: unlikedPostIndex, section: 0)], with: .none)
+            }
         }
-        viewModel.didUnlikePost(postID: postID)
-        likeSyncDelegate?.unlikedPost(postID: postID)
     }
 }
 
@@ -184,6 +221,6 @@ extension HomeViewController: LikeSyncDelegate {
         }
         posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
         tableView.reloadData()
-       
+        
     }
 }

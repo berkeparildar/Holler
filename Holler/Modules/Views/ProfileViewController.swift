@@ -20,7 +20,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
     var viewModel: ProfileViewModel!
     var posts: [Post] = []
     weak var likeSyncDelegate: LikeSyncDelegate?
-
+    
     lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.delegate = self
@@ -34,7 +34,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         return tableView
     }()
     
-     lazy var followButton: UIButton = {
+    lazy var followButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Follow", for: .normal)
         button.layer.cornerRadius = 16
@@ -46,7 +46,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         return button
     }()
     
-     lazy var unfollowButton: UIButton = {
+    lazy var unfollowButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Unfollow", for: .normal)
         button.layer.cornerRadius = 16
@@ -58,7 +58,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         return button
     }()
     
-     lazy var editProfileButton: UIButton = {
+    lazy var editProfileButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Edit Profile", for: .normal)
         button.setTitleColor(.gray, for: .selected)
@@ -66,7 +66,6 @@ class ProfileViewController: UIViewController, LoadingShowable {
         button.titleLabel?.font = .boldSystemFont(ofSize: 14)
         button.backgroundColor = .white
         button.setTitleColor(.black, for: .normal)
-        button.addTarget(self, action: #selector(didTapEditButton), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -122,13 +121,52 @@ class ProfileViewController: UIViewController, LoadingShowable {
         viewModel.unfollowUser(targetID: viewModel.userID, currentID: UserService.shared.currentUser!.uid)
     }
     
+    private func configureMenu() {
+            let option1 = UIAction(title: "Option 1", image: UIImage(systemName: "1.circle")) { action in
+                print("Option 1 selected")
+            }
+            
+            let option2 = UIAction(title: "Option 2", image: UIImage(systemName: "2.circle")) { action in
+                print("Option 2 selected")
+            }
+            
+            let option3 = UIAction(title: "Option 3", image: UIImage(systemName: "3.circle")) { action in
+                print("Option 3 selected")
+            }
+            
+            let menu = UIMenu(title: "", children: [option1, option2, option3])
+            editProfileButton.menu = menu
+            editProfileButton.showsMenuAsPrimaryAction = true
+        }
+    
     @objc func didTapEditButton() {
-        
+        let actionSheet = UIAlertController(title: nil, message: "Choose an option", preferredStyle: .actionSheet)
+            
+            // Add options
+            let option1 = UIAlertAction(title: "Option 1", style: .default) { action in
+                print("Option 1 selected")
+            }
+            let option2 = UIAlertAction(title: "Option 2", style: .default) { action in
+                print("Option 2 selected")
+            }
+            let option3 = UIAlertAction(title: "Option 3", style: .default) { action in
+                print("Option 3 selected")
+            }
+            let cancel = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+            
+            actionSheet.addAction(option1)
+            actionSheet.addAction(option2)
+            actionSheet.addAction(option3)
+            actionSheet.addAction(cancel)
+            
+            // Present the action sheet
+            present(actionSheet, animated: true, completion: nil)
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
+        configureMenu()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -167,6 +205,8 @@ class ProfileViewController: UIViewController, LoadingShowable {
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
         
+        tableView.bounces = false
+        tableView.alwaysBounceVertical = false
         let headerView = createTableHeaderView()
         tableView.tableHeaderView = headerView
     }
@@ -183,7 +223,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         customView.addSubview(followButton)
         customView.addSubview(unfollowButton)
         customView.addSubview(editProfileButton)
-      
+        
         headerView.addSubview(customView)
         NSLayoutConstraint.activate([
             customView.topAnchor.constraint(equalTo: headerView.topAnchor),
@@ -243,6 +283,7 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! PostCell
         cell.delegate = self
+        cell.disableProfileImageButton()
         cell.configure(post: posts[indexPath.row])
         return cell
     }
@@ -272,49 +313,35 @@ extension ProfileViewController: ProfileViewModelDelegate {
     }
     
     func didFetchPosts(posts: [Post]) {
-        self.posts = posts
+        self.posts = posts.sorted(by: { $0.time > $1.time })
         tableView.reloadData()
     }
 }
 
 extension ProfileViewController: CellDelegate {
+    func didTapUserProfile(userID: String, user: User?) {}
+    
     func didLikePost(postID: String) {
-        let likedPost = posts.firstIndex { post in
+        let likedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
-        posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
+        guard let likedPostIndex = likedPostIndex else { return }
+        posts[likedPostIndex].likes.append(UserService.shared.currentUser!.uid)
         viewModel.didLikePost(postID: postID)
         likeSyncDelegate?.likedPost(postID: postID)
+        tableView.reloadRows(at: [IndexPath(row: likedPostIndex, section: 0)], with: .fade)
     }
     
     func didUnlikePost(postID: String) {
-        let unlikedPost = posts.firstIndex { post in
+        let unlikedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
-        if let index = posts[unlikedPost!].likes.firstIndex(of: UserService.shared.currentUser!.uid) {
-            posts[unlikedPost!].likes.remove(at: index)
+        guard let unlikedPostIndex = unlikedPostIndex else { return }
+        if let index = posts[unlikedPostIndex].likes.firstIndex(of: UserService.shared.currentUser!.uid) {
+            posts[unlikedPostIndex].likes.remove(at: index)
+            viewModel.didUnlikePost(postID: postID)
+            likeSyncDelegate?.unlikedPost(postID: postID)
+            tableView.reloadRows(at: [IndexPath(row: unlikedPostIndex, section: 0)], with: .fade)
         }
-        viewModel.didUnlikePost(postID: postID)
-        likeSyncDelegate?.unlikedPost(postID: postID)
-    }
-}
-
-extension ProfileViewController: LikeSyncDelegate {
-    func unlikedPost(postID: String) {
-        let unlikedPost = posts.firstIndex { post in
-            post.id == postID
-        }
-        if let index = posts[unlikedPost!].likes.firstIndex(of: UserService.shared.currentUser!.uid) {
-            posts[unlikedPost!].likes.remove(at: index)
-        }
-        tableView.reloadData()
-    }
-    
-    func likedPost(postID: String) {
-        let likedPost = posts.firstIndex { post in
-            post.id == postID
-        }
-        posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
-        tableView.reloadData()
     }
 }
