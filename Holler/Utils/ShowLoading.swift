@@ -26,7 +26,7 @@ final class LoadingView {
     
     static let shared = LoadingView()
     
-    private var backgroundView: UIVisualEffectView!
+    private var backgroundView: UIView!
     private var indicator: UIActivityIndicatorView!
     
     
@@ -35,15 +35,15 @@ final class LoadingView {
     }
     
     private func setupViews() {
-        let blurEffect = UIBlurEffect(style: .light)
-        backgroundView = UIVisualEffectView(effect: blurEffect)
+        backgroundView = UIView()
+        backgroundView.backgroundColor = .black.withAlphaComponent(0.5)
         backgroundView.frame = UIScreen.main.bounds
         
         indicator = UIActivityIndicatorView(style: .large)
         indicator.hidesWhenStopped = true
         indicator.translatesAutoresizingMaskIntoConstraints = false
         
-        backgroundView.contentView.addSubview(indicator)
+        backgroundView.addSubview(indicator)
         
         NSLayoutConstraint.activate([
             indicator.centerXAnchor.constraint(equalTo: backgroundView.centerXAnchor),

@@ -7,21 +7,7 @@
 
 import UIKit
 
-protocol PostCreationDelegate: AnyObject {
-    func didPost()
-}
-
-protocol HomeViewModelDelegate: AnyObject {
-    func didFetchPosts(posts: [Post])
-}
-
-protocol CellDelegate: AnyObject {
-    func didLikePost(postID: String)
-    func didUnlikePost(postID: String)
-    func didTapUserProfile(userID: String, user: User?)
-}
-
-class HomeViewController: UIViewController {
+final class HomeViewController: UIViewController {
     
     var viewModel: HomeViewModel!
     var posts: [Post] = []
@@ -140,6 +126,11 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
     }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let postView = PostScreenBuilder.create(post: posts[indexPath.row], likeDelegate: self)
+        self.navigationController?.pushViewController(postView, animated: true)
+    }
 }
 
 extension HomeViewController: PostCreationDelegate {
@@ -175,7 +166,7 @@ extension HomeViewController: CellDelegate {
         }
     }
     
-    func didLikePost(postID: String) {
+    func didTapLikeButton(postID: String) {
         let likedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
@@ -188,7 +179,7 @@ extension HomeViewController: CellDelegate {
         }
     }
     
-    func didUnlikePost(postID: String) {
+    func didTapUnlikeButton(postID: String) {
         let unlikedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
@@ -221,6 +212,5 @@ extension HomeViewController: LikeSyncDelegate {
         }
         posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
         tableView.reloadData()
-        
     }
 }

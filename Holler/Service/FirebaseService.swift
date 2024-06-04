@@ -90,7 +90,7 @@ final class FirebaseService {
         ]
         let postRef = db.collection("posts").document()
         if let imageData = imageData {
-            uploadImage(imageData, postID: postRef.documentID) { imageUrl, error in
+            uploadPostImage(imageData, postID: postRef.documentID) { imageUrl, error in
                 if let error = error {
                     completion(false, error)
                     return
@@ -185,7 +185,7 @@ final class FirebaseService {
         }
     }
     
-    func uploadImage(_ imageData: Data?, postID: String, completion: @escaping (URL?, Error?) -> Void) {
+    func uploadPostImage(_ imageData: Data?, postID: String, completion: @escaping (URL?, Error?) -> Void) {
         guard let imageData = imageData else {
             completion(nil, NSError(domain: "Image conversion error", code: 400, userInfo: nil))
             return
@@ -199,6 +199,52 @@ final class FirebaseService {
             let imagePath = "posts/\(postID).jpg"
             FirebaseService.shared.getImageURL(from: imagePath) { url in
                 completion(url, nil)
+            }
+        }
+    }
+    
+    func uploadUserProfileImage(_ imageData: Data?, completion: @escaping (Error?) -> Void) {
+        guard let imageData = imageData else {
+            completion(NSError(domain: "Image conversion error", code: 400, userInfo: nil))
+            return
+        }
+        guard let currentUser = UserService.shared.currentUser else { return }
+        let storageRef = storage.reference().child("profileImages/\(currentUser.uid).jpg")
+        storageRef.putData(imageData, metadata: nil) { metadata, error in
+            if let error = error {
+                completion(error)
+                return
+            }
+            let imagePath = "profileImages/\(currentUser.uid).jpg"
+            FirebaseService.shared.getImageURL(from: imagePath) { [weak self] url in
+                guard let self = self, let url = url else { return }
+                let userRef = db.collection("users").document(currentUser.uid)
+                UserService.shared.currentUser!.profileImageURL = url.absoluteString
+                userRef.updateData(["profileURL": url.absoluteString])
+                completion(nil)
+            }
+        }
+    }
+    
+    func uploadUserBannerImage(_ imageData: Data?, completion: @escaping (Error?) -> Void) {
+        guard let imageData = imageData else {
+            completion(NSError(domain: "Image conversion error", code: 400, userInfo: nil))
+            return
+        }
+        guard let currentUser = UserService.shared.currentUser else { return }
+        let storageRef = storage.reference().child("bannerImages/\(currentUser.uid).jpg")
+        storageRef.putData(imageData, metadata: nil) { metadata, error in
+            if let error = error {
+                completion(error)
+                return
+            }
+            let imagePath = "bannerImages/\(currentUser.uid).jpg"
+            FirebaseService.shared.getImageURL(from: imagePath) { [weak self] url in
+                guard let self = self, let url = url else { return }
+                let userRef = db.collection("users").document(currentUser.uid)
+                UserService.shared.currentUser!.bannerImageURL = url.absoluteString
+                userRef.updateData(["bannerURL": url.absoluteString])
+                completion(nil)
             }
         }
     }

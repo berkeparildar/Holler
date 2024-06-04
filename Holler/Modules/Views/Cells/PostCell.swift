@@ -14,13 +14,23 @@ class PostCell: UITableViewCell {
     var isLiked: Bool = false
     weak var delegate: CellDelegate?
     
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        self.selectionStyle = .none
+        setupViews()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     private lazy var profileImage: UIButton = {
         let button = UIButton(type: .custom)
-        button.layer.cornerRadius = 16
+        button.layer.cornerRadius = 20
         button.layer.masksToBounds = true
         button.backgroundColor = .clear
         button.setImage(UIImage(systemName: "heart"), for: .normal)
-        button.imageView?.contentMode = .scaleAspectFit
+        button.imageView?.contentMode = .scaleAspectFill
         button.imageView?.layer.cornerRadius = 16
         button.imageView?.layer.masksToBounds = true
         button.addTarget(self, action: #selector(didTapProfileImage), for: .touchUpInside)
@@ -46,7 +56,7 @@ class PostCell: UITableViewCell {
     
     private lazy var timeLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12)
+        label.font = .systemFont(ofSize: 14)
         label.textColor = .lightGray
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -82,7 +92,7 @@ class PostCell: UITableViewCell {
         button.setImage(UIImage(systemName: "heart"), for: .normal)
         button.imageView?.contentMode = .scaleAspectFit
         button.tintColor = .red
-        button.addTarget(self, action: #selector(didLikePost), for: .touchUpInside)
+        button.addTarget(self, action: #selector(didTapLikeButton), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -94,6 +104,21 @@ class PostCell: UITableViewCell {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
+    
+    @objc func didTapLikeButton() {
+        if isLiked {
+            likeButton.setImage(UIImage(systemName: "heart"), for: .normal)
+            delegate?.didTapUnlikeButton(postID: post.id)
+        } else {
+            likeButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
+            delegate?.didTapLikeButton(postID: post.id)
+        }
+        
+    }
+    
+    @objc func didTapProfileImage() {
+        delegate?.didTapUserProfile(userID: post.userID, user: post.user)
+    }
     
     private func setupViews() {
         contentView.addSubview(profileImage)
@@ -107,13 +132,14 @@ class PostCell: UITableViewCell {
         contentView.addSubview(replyImage)
         
         NSLayoutConstraint.activate([
-            profileImage.heightAnchor.constraint(equalToConstant: 32),
-            profileImage.widthAnchor.constraint(equalToConstant: 32),
+            profileImage.heightAnchor.constraint(equalToConstant: 40),
+            profileImage.widthAnchor.constraint(equalToConstant: 40),
             profileImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             profileImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
             
             nameLabel.leadingAnchor.constraint(equalTo: profileImage.trailingAnchor, constant: 8),
             nameLabel.topAnchor.constraint(equalTo: profileImage.topAnchor),
+            nameLabel.bottomAnchor.constraint(equalTo: postTextLabel.topAnchor, constant: -2),
             
             usernameLabel.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: 6),
             usernameLabel.bottomAnchor.constraint(equalTo: nameLabel.bottomAnchor),
@@ -144,10 +170,6 @@ class PostCell: UITableViewCell {
         ])
     }
     
-    func disableProfileImageButton() {
-        self.profileImage.isUserInteractionEnabled = false
-    }
-    
     func configure(post: Post) {
         self.post = post
         if let user = post.user {
@@ -160,22 +182,6 @@ class PostCell: UITableViewCell {
             replyCountLabel.text = String(post.replies.count)
             likeCountLabel.text = String(post.likes.count)
             self.profileImage.kf.setImage(with: URL(string: user.profileImageURL), for: .normal)
-        } else {
-            FirebaseService.shared.fetchUser(userID: post.userID) { [weak self] user, error in
-                if let error = error {
-                    print("There was an error fetching user" + error.localizedDescription)
-                }
-                guard let user = user, let self = self else { return }
-                nameLabel.text = user.name
-                usernameLabel.text = "@\(user.username)"
-                let currentTime = Date().timeIntervalSince1970
-                let postTimeDifference = currentTime - TimeInterval(post.time)
-                timeLabel.text = postTimeDifference.formattedTimeString
-                postTextLabel.text = post.postText
-                replyCountLabel.text = String(post.replies.count)
-                likeCountLabel.text = String(post.likes.count)
-                self.profileImage.kf.setImage(with: URL(string: user.profileImageURL), for: .normal)
-            }
         }
         if post.likes.contains(UserService.shared.currentUser!.uid) {
             likeButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
@@ -186,30 +192,12 @@ class PostCell: UITableViewCell {
         }
     }
     
-    @objc func didLikePost() {
-        UIView.animate(withDuration: 0.2) { [weak self] in
-            guard let self = self else { return }
-            if isLiked {
-                likeButton.setImage(UIImage(systemName: "heart"), for: .normal)
-                delegate?.didUnlikePost(postID: post.id)
-            } else {
-                likeButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
-                delegate?.didLikePost(postID: post.id)
-            }
-        }
+    func disableProfileImageButton() {
+        self.profileImage.isUserInteractionEnabled = false
     }
     
-    @objc func didTapProfileImage() {
-        delegate?.didTapUserProfile(userID: post.userID, user: post.user)
-    }
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        self.selectionStyle = .none
-        setupViews()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    func disableReplies() {
+        self.replyImage.isHidden = true
+        self.replyCountLabel.isHidden = true
     }
 }

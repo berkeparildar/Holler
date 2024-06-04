@@ -7,11 +7,11 @@
 
 import UIKit
 
-protocol SuccessShowable where Self: UIViewController {}
+protocol MessageShowable where Self: UIViewController {}
 
-extension SuccessShowable {
-    func showSuccessMessage(confirm: @escaping () -> Void) {
-        SuccessDialogue.shared.showDialog(confirm: confirm)
+extension MessageShowable {
+    func showMessage(title: String, confirm: @escaping () -> Void) {
+        SuccessDialogue.shared.showDialog(title: title, confirm: confirm)
     }
 }
 
@@ -82,8 +82,8 @@ class SuccessDialogue {
         confirmAction?()
     }
     
-    func showDialog(confirm: @escaping () -> Void) {
-        messageLabel.text = "Sign Up was successfull!"
+    func showDialog(title: String, confirm: @escaping () -> Void) {
+        messageLabel.text = title
         confirmAction = confirm
         
         if let window = UIApplication.shared.windows.first(where: \.isKeyWindow) {

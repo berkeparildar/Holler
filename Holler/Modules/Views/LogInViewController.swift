@@ -140,18 +140,21 @@ extension LogInViewController: LogInViewModelDelegate, ShowAlert {
     func logInOutput(success: Bool, user: User?) {
         if success {
             guard let window = self.view.window else { return }
-            let tabBarController = UITabBarController()
-            let searchViewController = SearchScreenBuilder.create()
-            let searchNavController = UINavigationController(rootViewController: searchViewController)
-            searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
-            let homeViewController = HomeBuilder.create()
-            let homeNavController = UINavigationController(rootViewController: homeViewController)
-            homeNavController.tabBarItem = UITabBarItem(title: "Feed", image: UIImage(systemName: "newspaper.fill"), tag: 1)
-            let profileViewController = ProfileScreenBuilder.create(userID: UserService.shared.currentUser!.uid, user: user)
-            let profileNavController = UINavigationController(rootViewController: profileViewController)
-            profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
-            tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
-            window.rootViewController = tabBarController
+            if let user = user {
+                let tabBarController = UITabBarController()
+                let searchViewController = SearchScreenBuilder.create()
+                let searchNavController = UINavigationController(rootViewController: searchViewController)
+                searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
+                let homeViewController = HomeBuilder.create()
+                let homeNavController = UINavigationController(rootViewController: homeViewController)
+                homeNavController.tabBarItem = UITabBarItem(title: "Feed", image: UIImage(systemName: "newspaper.fill"), tag: 1)
+                let profileViewController = ProfileScreenBuilder.create(userID: user.uid, user: user)
+                let profileNavController = UINavigationController(rootViewController: profileViewController)
+                profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
+                profileViewController.likeSyncDelegate = homeViewController
+                tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
+                window.rootViewController = tabBarController
+            }
         }
         else {
             showAlert(title: "Error", message: "There was an error logging you in, please try again later")

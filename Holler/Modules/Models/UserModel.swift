@@ -14,8 +14,8 @@ struct User {
     var followers: [String]
     var following: [String]
     var posts: [String]
-    let profileImageURL: String
-    let bannerImageURL: String
+    var profileImageURL: String
+    var bannerImageURL: String
     
     init(uid: String, data: [String: Any]) {
         self.uid = uid

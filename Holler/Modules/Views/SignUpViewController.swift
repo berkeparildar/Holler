@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SignUpViewController: UIViewController, LoadingShowable, SuccessShowable {
+class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
     
     var viewModel: SignUpViewModel!
     
@@ -185,7 +185,7 @@ class SignUpViewController: UIViewController, LoadingShowable, SuccessShowable {
                 print("Signup error: \(error.localizedDescription)")
             } else {
                 print("Signup successful!")
-                showSuccessMessage {
+                showMessage(title: "Sign up successful!") {
                     self.navigationController?.popToRootViewController(animated: true)
                 }
             }

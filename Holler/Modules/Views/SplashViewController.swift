@@ -78,6 +78,23 @@ extension SplashViewController: SplashViewModelDelegate {
                     profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
                     profileViewController.likeSyncDelegate = homeViewController
                     tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
+                    if #available(iOS 13.0, *) {
+                        let appearance = UITabBarAppearance()
+                        appearance.configureWithOpaqueBackground()
+                        appearance.backgroundColor = .black
+                        appearance.shadowImage = nil
+                        appearance.shadowColor = nil
+                        
+                        tabBarController.tabBar.standardAppearance = appearance
+                        if #available(iOS 15.0, *) {
+                            tabBarController.tabBar.scrollEdgeAppearance = appearance
+                        }
+                    } else {
+                        tabBarController.tabBar.barTintColor = .black
+                        tabBarController.tabBar.shadowImage = UIImage()
+                        tabBarController.tabBar.backgroundImage = UIImage()
+                    }
+                    tabBarController.tabBar.tintColor = .white
                     window.rootViewController = tabBarController
                 }
             }

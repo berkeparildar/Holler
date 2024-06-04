@@ -8,24 +8,30 @@
 import UIKit
 import Kingfisher
 
-protocol ProfileViewModelDelegate: AnyObject {
-    func didFetchPosts(posts: [Post])
-    func didFetchUser(user: User)
-    func didFollowUser()
-    func didUnfollowUser()
-}
-
-class ProfileViewController: UIViewController, LoadingShowable {
+final class ProfileViewController: UIViewController, MessageShowable, LoadingShowable {
     
     var viewModel: ProfileViewModel!
     var posts: [Post] = []
+    var isSelectingProfileImage: Bool = false
     weak var likeSyncDelegate: LikeSyncDelegate?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupViews()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.fetchPostsForProfile()
+    }
     
     lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.delegate = self
         tableView.dataSource = self
         tableView.delaysContentTouches = false
+        tableView.bounces = false
+        tableView.alwaysBounceVertical = false
         tableView.register(PostCell.self, forCellReuseIdentifier: "postCell")
         tableView.register(PostImageCell.self, forCellReuseIdentifier: "postImageCell")
         tableView.rowHeight = UITableView.automaticDimension
@@ -66,6 +72,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         button.titleLabel?.font = .boldSystemFont(ofSize: 14)
         button.backgroundColor = .white
         button.setTitleColor(.black, for: .normal)
+        button.addTarget(self, action: #selector(didTapEditButton), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -80,7 +87,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
     
     lazy var profileImage: UIImageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
+        imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 28
         imageView.layer.borderWidth = 4
         imageView.layer.borderColor = UIColor.black.cgColor
@@ -91,7 +98,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
     
     lazy var nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .boldSystemFont(ofSize: 14)
+        label.font = .boldSystemFont(ofSize: 16)
         label.textColor = .white
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -99,7 +106,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
     
     lazy var usernameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12)
+        label.font = .systemFont(ofSize: 14)
         label.textColor = .lightGray
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -107,7 +114,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
     
     lazy var followInfoLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12)
+        label.font = .systemFont(ofSize: 14)
         label.textColor = .lightGray
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -121,59 +128,44 @@ class ProfileViewController: UIViewController, LoadingShowable {
         viewModel.unfollowUser(targetID: viewModel.userID, currentID: UserService.shared.currentUser!.uid)
     }
     
-    private func configureMenu() {
-            let option1 = UIAction(title: "Option 1", image: UIImage(systemName: "1.circle")) { action in
-                print("Option 1 selected")
-            }
-            
-            let option2 = UIAction(title: "Option 2", image: UIImage(systemName: "2.circle")) { action in
-                print("Option 2 selected")
-            }
-            
-            let option3 = UIAction(title: "Option 3", image: UIImage(systemName: "3.circle")) { action in
-                print("Option 3 selected")
-            }
-            
-            let menu = UIMenu(title: "", children: [option1, option2, option3])
-            editProfileButton.menu = menu
-            editProfileButton.showsMenuAsPrimaryAction = true
-        }
-    
     @objc func didTapEditButton() {
-        let actionSheet = UIAlertController(title: nil, message: "Choose an option", preferredStyle: .actionSheet)
-            
-            // Add options
-            let option1 = UIAlertAction(title: "Option 1", style: .default) { action in
-                print("Option 1 selected")
-            }
-            let option2 = UIAlertAction(title: "Option 2", style: .default) { action in
-                print("Option 2 selected")
-            }
-            let option3 = UIAlertAction(title: "Option 3", style: .default) { action in
-                print("Option 3 selected")
-            }
-            let cancel = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-            
-            actionSheet.addAction(option1)
-            actionSheet.addAction(option2)
-            actionSheet.addAction(option3)
-            actionSheet.addAction(cancel)
-            
-            // Present the action sheet
-            present(actionSheet, animated: true, completion: nil)
+        let menuVC = MenuViewController(actions: [
+            Action(title: "Change Profile Picture",
+                   image: UIImage(systemName: "person.fill"),
+                   handler: { [weak self] in
+                       guard let self = self else { return }
+                       self.dismiss(animated: true)
+                       self.isSelectingProfileImage = true
+                       self.selectImage()
+                   }),
+            Action(title: "Change Banner Picture",
+                   image: UIImage(systemName: "photo.fill"),
+                   handler: { [weak self] in
+                       guard let self = self else { return }
+                       self.dismiss(animated: true)
+                       self.isSelectingProfileImage = false
+                       self.selectImage()
+                   }),
+            Action(title: "Change Username",
+                   image: UIImage(systemName: "pencil"),
+                   handler: { [weak self] in
+                       guard let self = self else { return }
+                       print("Hello")
+                       self.dismiss(animated: true)
+                   }),
+            Action(title: "Change Name",
+                   image: UIImage(systemName: "person.text.rectangle.fill"),
+                   handler: { [weak self] in
+                       guard let self = self else { return }
+                       print("Hello")
+                       self.dismiss(animated: true)
+                   })
+        ])
+        menuVC.popoverPresentationController?.sourceView = editProfileButton
+        menuVC.popoverPresentationController?.sourceRect = editProfileButton.bounds
+        present(menuVC, animated: true, completion: nil)
     }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupTableView()
-        configureMenu()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        print("called")
-        viewModel.fetchPostsForProfile()
-    }
+  
     
     private func configureWithUser(user: User) {
         self.navigationItem.title = user.username
@@ -196,22 +188,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
         }
     }
     
-    private func setupTableView() {
-        view.addSubview(tableView)
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-        ])
-        
-        tableView.bounces = false
-        tableView.alwaysBounceVertical = false
-        let headerView = createTableHeaderView()
-        tableView.tableHeaderView = headerView
-    }
-    
-    private func createTableHeaderView() -> UIView {
+    private func setupViews() {
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: self.view.frame.width, height: 240))
         let customView = UIView(frame: headerView.frame)
         customView.translatesAutoresizingMaskIntoConstraints = false
@@ -223,9 +200,15 @@ class ProfileViewController: UIViewController, LoadingShowable {
         customView.addSubview(followButton)
         customView.addSubview(unfollowButton)
         customView.addSubview(editProfileButton)
+        view.addSubview(tableView)
         
         headerView.addSubview(customView)
         NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
             customView.topAnchor.constraint(equalTo: headerView.topAnchor),
             customView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
             customView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
@@ -241,7 +224,7 @@ class ProfileViewController: UIViewController, LoadingShowable {
             profileImage.heightAnchor.constraint(equalToConstant: 56),
             profileImage.widthAnchor.constraint(equalToConstant: 56),
             
-            nameLabel.topAnchor.constraint(equalTo: profileImage.bottomAnchor, constant: 16),
+            nameLabel.topAnchor.constraint(equalTo: profileImage.bottomAnchor, constant: 8),
             nameLabel.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 8),
             
             usernameLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8),
@@ -265,7 +248,18 @@ class ProfileViewController: UIViewController, LoadingShowable {
             editProfileButton.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor),
             editProfileButton.trailingAnchor.constraint(equalTo: customView.trailingAnchor, constant: -8),
         ])
-        return headerView
+        tableView.tableHeaderView = headerView
+    }
+    
+    private func selectImage() {
+        let imagePickerController = UIImagePickerController()
+        imagePickerController.delegate = self
+        imagePickerController.sourceType = .photoLibrary
+        showLoading()
+        present(imagePickerController, animated: true) { [weak self] in
+            guard let self = self else { return }
+            hideLoading()
+        }
     }
 }
 
@@ -287,9 +281,36 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
         cell.configure(post: posts[indexPath.row])
         return cell
     }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let postView = PostScreenBuilder.create(post: posts[indexPath.row])
+        self.navigationController?.pushViewController(postView, animated: true)
+    }
 }
 
 extension ProfileViewController: ProfileViewModelDelegate {
+    func didChangeBannerPicture(success: Bool) {
+        hideLoading()
+        if success {
+            showMessage(title: "Banner picture changed successfully!") { [weak self] in
+                guard let self = self else { return }
+                self.bannerImage.kf.setImage(with: URL(string: UserService.shared.currentUser!.bannerImageURL))
+                self.dismiss(animated: true)
+            }
+        }
+    }
+    
+    func didChangeProfilePicture(success: Bool) {
+        hideLoading()
+        if success {
+            showMessage(title: "Profile picture changed successfully!") { [weak self] in
+                guard let self = self else { return }
+                self.profileImage.kf.setImage(with: URL(string: UserService.shared.currentUser!.profileImageURL))
+                self.dismiss(animated: true)
+            }
+        }
+    }
+    
     func didUnfollowUser() {
         self.followButton.isHidden = false
         self.unfollowButton.isHidden = true
@@ -321,7 +342,7 @@ extension ProfileViewController: ProfileViewModelDelegate {
 extension ProfileViewController: CellDelegate {
     func didTapUserProfile(userID: String, user: User?) {}
     
-    func didLikePost(postID: String) {
+    func didTapLikeButton(postID: String) {
         let likedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
@@ -329,10 +350,10 @@ extension ProfileViewController: CellDelegate {
         posts[likedPostIndex].likes.append(UserService.shared.currentUser!.uid)
         viewModel.didLikePost(postID: postID)
         likeSyncDelegate?.likedPost(postID: postID)
-        tableView.reloadRows(at: [IndexPath(row: likedPostIndex, section: 0)], with: .fade)
+        tableView.reloadRows(at: [IndexPath(row: likedPostIndex, section: 0)], with: .none)
     }
     
-    func didUnlikePost(postID: String) {
+    func didTapUnlikeButton(postID: String) {
         let unlikedPostIndex = posts.firstIndex { post in
             post.id == postID
         }
@@ -341,7 +362,25 @@ extension ProfileViewController: CellDelegate {
             posts[unlikedPostIndex].likes.remove(at: index)
             viewModel.didUnlikePost(postID: postID)
             likeSyncDelegate?.unlikedPost(postID: postID)
-            tableView.reloadRows(at: [IndexPath(row: unlikedPostIndex, section: 0)], with: .fade)
+            tableView.reloadRows(at: [IndexPath(row: unlikedPostIndex, section: 0)], with: .none)
         }
+    }
+}
+
+extension ProfileViewController: UIImagePickerControllerDelegate & UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        if let selectedImage = info[.originalImage] as? UIImage {
+            if isSelectingProfileImage {
+                viewModel.changeProfilePicture(imageData: selectedImage.jpegData(compressionQuality: 0.8))
+            } else {
+                viewModel.changeBannerPicture(imageData: selectedImage.jpegData(compressionQuality: 0.8))
+            }
+        }
+        picker.dismiss(animated: true, completion: nil)
+        showLoading()
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
     }
 }

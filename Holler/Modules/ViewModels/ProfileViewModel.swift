@@ -122,4 +122,24 @@ final class ProfileViewModel {
             }
         }
     }
+    
+    func changeProfilePicture(imageData: Data?) {
+        FirebaseService.shared.uploadUserProfileImage(imageData) { [weak self] error in
+            guard let self = self else { return }
+            if let error = error {
+                delegate?.didChangeProfilePicture(success: false)
+            }
+            delegate?.didChangeProfilePicture(success: true)
+        }
+    }
+    
+    func changeBannerPicture(imageData: Data?) {
+        FirebaseService.shared.uploadUserBannerImage(imageData) { [weak self] error in
+            guard let self = self else { return }
+            if let error = error {
+                delegate?.didChangeBannerPicture(success: false)
+            }
+            delegate?.didChangeBannerPicture(success: true)
+        }
+    }
 }
