@@ -8,13 +8,18 @@
 import Foundation
 
 protocol PostCreationDelegate: AnyObject {
-    func didPost()
+    func didPost(postID: String)
 }
 
 protocol CellDelegate: AnyObject {
     func didTapLikeButton(postID: String)
     func didTapUnlikeButton(postID: String)
     func didTapUserProfile(userID: String, user: User?)
+}
+
+protocol SplashViewModelDelegate: AnyObject {
+    func showInternetError()
+    func navigateToHomePage()
 }
 
 protocol HomeViewModelDelegate: AnyObject {
@@ -29,3 +34,19 @@ protocol ProfileViewModelDelegate: AnyObject {
     func didChangeProfilePicture(success: Bool)
     func didChangeBannerPicture(success: Bool)
 }
+
+protocol LikeSyncDelegate: AnyObject {
+    func unlikedPost(postID: String)
+    func likedPost(postID: String)
+}
+
+protocol ReplySyncDelegate: AnyObject {
+    func repliedToPost(postID: String, rootPostID: String)
+}
+
+
+protocol PostViewModelDelegate: AnyObject {
+    func didFetchPosts(posts: [Post])
+}
+
+

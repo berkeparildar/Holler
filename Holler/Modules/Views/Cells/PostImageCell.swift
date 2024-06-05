@@ -27,7 +27,7 @@ class PostImageCell: UITableViewCell {
     private lazy var profileImage: UIButton = {
         let button = UIButton(type: .custom)
         button.backgroundColor = .clear
-        button.layer.cornerRadius = 16
+        button.layer.cornerRadius = 20
         button.setImage(UIImage(systemName: "heart"), for: .normal)
         button.imageView?.contentMode = .scaleAspectFill
         button.addTarget(self, action: #selector(didTapProfileImage), for: .touchUpInside)
@@ -80,7 +80,8 @@ class PostImageCell: UITableViewCell {
     
     private lazy var replyImage :UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "message")
+        imageView.image = UIImage(systemName: "bubble")
+        imageView.tintColor = .lightGray
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -139,8 +140,8 @@ class PostImageCell: UITableViewCell {
         contentView.addSubview(replyImage)
         
         NSLayoutConstraint.activate([
-            profileImage.heightAnchor.constraint(equalToConstant: 32),
-            profileImage.widthAnchor.constraint(equalToConstant: 32),
+            profileImage.heightAnchor.constraint(equalToConstant: 40),
+            profileImage.widthAnchor.constraint(equalToConstant: 40),
             profileImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             profileImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
             
@@ -211,5 +212,10 @@ class PostImageCell: UITableViewCell {
     func disableReplies() {
         self.replyImage.isHidden = true
         self.replyCountLabel.isHidden = true
+    }
+    
+    func enableReplies() {
+        self.replyImage.isHidden = false
+        self.replyCountLabel.isHidden = false
     }
 }

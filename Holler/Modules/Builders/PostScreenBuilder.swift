@@ -8,10 +8,11 @@
 import Foundation
 
 final class PostScreenBuilder {
-    static func create(post: Post, likeDelegate: LikeSyncDelegate? = nil) -> PostViewController {
-        let viewModel = PostViewModel(post: post)
+    static func create(postID: String, user: User, likeDelegate: LikeSyncDelegate? = nil, replyDelegate: ReplySyncDelegate? = nil) -> PostViewController {
+        let viewModel = PostViewModel(postID: postID, user: user)
         let viewController = PostViewController()
         viewController.likeSyncDelegate = likeDelegate
+        viewController.replySyncDelegate = replyDelegate
         viewController.viewModel = viewModel
         viewModel.delegate = viewController
         return viewController

@@ -7,16 +7,18 @@
 
 import UIKit
 
-protocol MessageShowable where Self: UIViewController {}
+protocol MessageShowable where Self: UIViewController {
+    func showMessage(title: String, confirm: @escaping () -> Void)
+}
 
 extension MessageShowable {
     func showMessage(title: String, confirm: @escaping () -> Void) {
-        SuccessDialogue.shared.showDialog(title: title, confirm: confirm)
+        ShowMessage.shared.showDialog(title: title, confirm: confirm)
     }
 }
 
-class SuccessDialogue {
-    static let shared = SuccessDialogue()
+class ShowMessage {
+    static let shared = ShowMessage()
     private var backgroundView: UIView!
     private var dialogView: UIView!
     private var confirmAction: (() -> Void)?

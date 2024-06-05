@@ -32,7 +32,7 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
         let textField = UITextField()
         textField.autocorrectionType = .no
         textField.font = .systemFont(ofSize: 16)
-        textField.placeholder = "What's happening?"
+        textField.placeholder = "Write about something.."
         textField.borderStyle = .none
         textField.backgroundColor = .clear
         textField.delegate = self
@@ -44,6 +44,7 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
     private lazy var addImageButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "photo"), for: .normal)
+        button.tintColor = .white
         button.addTarget(self, action: #selector(didTapAddImage), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -70,7 +71,8 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
     
     private lazy var removeImageButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "xmark.circle"), for: .normal)
+        button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        button.tintColor = .white
         button.addTarget(self, action: #selector(didTapRemoveImage), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true
@@ -125,7 +127,11 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
     }
     
     @objc private func didTapPost() {
-        viewModel.post(text: textField.text!, imageData: selectedImageView.image?.jpegData(compressionQuality: 0.8))
+        if viewModel.rootPostID != nil {
+            viewModel.reply(text: textField.text!, imageData: selectedImageView.image?.jpegData(compressionQuality: 0.8))
+        } else {
+            viewModel.post(text: textField.text!, imageData: selectedImageView.image?.jpegData(compressionQuality: 0.8))
+        }
     }
     
     @objc private func didTapRemoveImage() {

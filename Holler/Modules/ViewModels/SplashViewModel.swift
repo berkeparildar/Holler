@@ -8,11 +8,6 @@
 import Foundation
 import Network
 
-protocol SplashViewModelDelegate: AnyObject {
-    func showInternetError()
-    func navigateToHomePage()
-}
-
 final class SplashViewModel {
     
     weak var delegate: SplashViewModelDelegate?

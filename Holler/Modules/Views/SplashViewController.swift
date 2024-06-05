@@ -9,11 +9,6 @@ import UIKit
 import FirebaseAuth
 import KeychainAccess
 
-protocol LikeSyncDelegate: AnyObject {
-    func unlikedPost(postID: String)
-    func likedPost(postID: String)
-}
-
 class SplashViewController: UIViewController, ShowAlert {
     private let keychain = Keychain(service: "com.bprldr.Holler")
     var viewModel: SplashViewModel!
@@ -57,7 +52,6 @@ class SplashViewController: UIViewController, ShowAlert {
 }
 
 extension SplashViewController: SplashViewModelDelegate {
-    
     func navigateToHomePage() {
         guard let window = self.view.window else { return }
         if let uid = try? keychain.get("uid"), !uid.isEmpty {
@@ -66,39 +60,9 @@ extension SplashViewController: SplashViewModelDelegate {
                     print(error.localizedDescription)
                 }
                 if let user = user {
-                    let tabBarController = UITabBarController()
-                    let searchViewController = SearchScreenBuilder.create()
-                    let searchNavController = UINavigationController(rootViewController: searchViewController)
-                    searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
-                    let homeViewController = HomeBuilder.create()
-                    let homeNavController = UINavigationController(rootViewController: homeViewController)
-                    homeNavController.tabBarItem = UITabBarItem(title: "Feed", image: UIImage(systemName: "newspaper.fill"), tag: 1)
-                    let profileViewController = ProfileScreenBuilder.create(userID: user.uid, user: user)
-                    let profileNavController = UINavigationController(rootViewController: profileViewController)
-                    profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
-                    profileViewController.likeSyncDelegate = homeViewController
-                    tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
-                    if #available(iOS 13.0, *) {
-                        let appearance = UITabBarAppearance()
-                        appearance.configureWithOpaqueBackground()
-                        appearance.backgroundColor = .black
-                        appearance.shadowImage = nil
-                        appearance.shadowColor = nil
-                        
-                        tabBarController.tabBar.standardAppearance = appearance
-                        if #available(iOS 15.0, *) {
-                            tabBarController.tabBar.scrollEdgeAppearance = appearance
-                        }
-                    } else {
-                        tabBarController.tabBar.barTintColor = .black
-                        tabBarController.tabBar.shadowImage = UIImage()
-                        tabBarController.tabBar.backgroundImage = UIImage()
-                    }
-                    tabBarController.tabBar.tintColor = .white
-                    window.rootViewController = tabBarController
+                    window.rootViewController = TabBarBuilder.create(user: user)
                 }
             }
-            
         } else {
             let loginVC = LogInScreenBuilder.create()
             let navigationController = UINavigationController(rootViewController: loginVC)

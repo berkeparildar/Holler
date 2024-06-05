@@ -8,16 +8,23 @@
 import UIKit
 import KeychainAccess
 
-
 class LogInViewController: UIViewController {
     
     var viewModel: LogInViewModel!
+    
+    private let backgroundView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .black
+        return view
+    }()
     
     private let emailTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "email"
         textField.borderStyle = .none
         textField.autocapitalizationType = .none
+        textField.autocorrectionType = .no
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -26,6 +33,7 @@ class LogInViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = "password"
         textField.borderStyle = .none
+        textField.autocorrectionType = .no
         textField.isSecureTextEntry = true
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
@@ -33,7 +41,7 @@ class LogInViewController: UIViewController {
     
     lazy var loginButton: UIButton = {
         let button = UIButton()
-        button.setTitle("Log In", for: .normal)
+        button.setTitle("Sign In", for: .normal)
         button.setTitleColor(.black, for: .normal)
         button.titleLabel?.font = .boldSystemFont(ofSize: 14)
         button.backgroundColor = .white
@@ -44,17 +52,17 @@ class LogInViewController: UIViewController {
     }()
     
     private let emailSeperator: UIView = {
-            let view = UIView()
-            view.translatesAutoresizingMaskIntoConstraints = false
-            view.backgroundColor = .gray
-            return view
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .gray
+        return view
     }()
     
     private let passwordSeperator: UIView = {
-            let view = UIView()
-            view.translatesAutoresizingMaskIntoConstraints = false
-            view.backgroundColor = .gray
-            return view
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .gray
+        return view
     }()
     
     lazy var signupButton: UIButton = {
@@ -70,9 +78,18 @@ class LogInViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
+        setupDismissKeyboardGesture()
     }
     
     private func setupViews() {
+        view.addSubview(backgroundView)
+        NSLayoutConstraint.activate([
+            backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+        
         view.addSubview(emailTextField)
         NSLayoutConstraint.activate([
             emailTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
@@ -89,7 +106,6 @@ class LogInViewController: UIViewController {
             emailSeperator.heightAnchor.constraint(equalToConstant: 1)
         ])
         
-        // Add password text field
         view.addSubview(passwordTextField)
         NSLayoutConstraint.activate([
             passwordTextField.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 20),
@@ -114,13 +130,21 @@ class LogInViewController: UIViewController {
             loginButton.heightAnchor.constraint(equalToConstant: 32)
         ])
         
-        // Add signup button
         view.addSubview(signupButton)
         NSLayoutConstraint.activate([
             signupButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
-            signupButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -20),
+            signupButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
             signupButton.heightAnchor.constraint(equalToConstant: 32)
         ])
+    }
+    
+    private func setupDismissKeyboardGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
     
     @objc private func loginButtonTapped() {
@@ -141,22 +165,9 @@ extension LogInViewController: LogInViewModelDelegate, ShowAlert {
         if success {
             guard let window = self.view.window else { return }
             if let user = user {
-                let tabBarController = UITabBarController()
-                let searchViewController = SearchScreenBuilder.create()
-                let searchNavController = UINavigationController(rootViewController: searchViewController)
-                searchNavController.tabBarItem = UITabBarItem(tabBarSystemItem: .search, tag: 0)
-                let homeViewController = HomeBuilder.create()
-                let homeNavController = UINavigationController(rootViewController: homeViewController)
-                homeNavController.tabBarItem = UITabBarItem(title: "Feed", image: UIImage(systemName: "newspaper.fill"), tag: 1)
-                let profileViewController = ProfileScreenBuilder.create(userID: user.uid, user: user)
-                let profileNavController = UINavigationController(rootViewController: profileViewController)
-                profileNavController.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.crop.circle.fill"), tag: 2)
-                profileViewController.likeSyncDelegate = homeViewController
-                tabBarController.viewControllers = [homeNavController, searchNavController, profileNavController]
-                window.rootViewController = tabBarController
+                window.rootViewController = TabBarBuilder.create(user: user)
             }
-        }
-        else {
+        } else {
             showAlert(title: "Error", message: "There was an error logging you in, please try again later")
         }
     }

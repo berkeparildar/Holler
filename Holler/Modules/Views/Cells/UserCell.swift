@@ -40,18 +40,19 @@ class UserCell: UITableViewCell {
             profileImage.heightAnchor.constraint(equalToConstant: 32),
             profileImage.widthAnchor.constraint(equalToConstant: 32),
             profileImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            profileImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            profileImage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
+            profileImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            profileImage.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -8)
         ])
         contentView.addSubview(nameLabel)
         NSLayoutConstraint.activate([
             nameLabel.leadingAnchor.constraint(equalTo: profileImage.trailingAnchor, constant: 8),
-            nameLabel.topAnchor.constraint(equalTo: profileImage.topAnchor),
+            nameLabel.centerYAnchor.constraint(equalTo: profileImage.centerYAnchor),
+            nameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -18)
         ])
         contentView.addSubview(usernameLabel)
         NSLayoutConstraint.activate([
             usernameLabel.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: 8),
-            usernameLabel.topAnchor.constraint(equalTo: profileImage.topAnchor)
+            usernameLabel.centerYAnchor.constraint(equalTo: profileImage.centerYAnchor),
         ])
     }
     

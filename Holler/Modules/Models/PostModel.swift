@@ -14,7 +14,7 @@ struct Post {
     let postText: String
     let hasImage: Bool
     let contentImageURL: String
-    let replies: [String]
+    var replies: [String]
     var likes: [String]
     var user: User?
     

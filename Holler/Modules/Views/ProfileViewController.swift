@@ -88,7 +88,7 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
     lazy var profileImage: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 28
+        imageView.layer.cornerRadius = 40
         imageView.layer.borderWidth = 4
         imageView.layer.borderColor = UIColor.black.cgColor
         imageView.layer.masksToBounds = true
@@ -120,6 +120,15 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
         return label
     }()
     
+    lazy var postsLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Posts"
+        label.font = .boldSystemFont(ofSize: 18)
+        label.textColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     @objc func didTapFollowButton() {
         viewModel.followUser(targetID: viewModel.userID, currentID: UserService.shared.currentUser!.uid)
     }
@@ -142,30 +151,25 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
                    image: UIImage(systemName: "photo.fill"),
                    handler: { [weak self] in
                        guard let self = self else { return }
-                       self.dismiss(animated: true)
                        self.isSelectingProfileImage = false
                        self.selectImage()
-                   }),
-            Action(title: "Change Username",
-                   image: UIImage(systemName: "pencil"),
-                   handler: { [weak self] in
-                       guard let self = self else { return }
-                       print("Hello")
                        self.dismiss(animated: true)
                    }),
-            Action(title: "Change Name",
-                   image: UIImage(systemName: "person.text.rectangle.fill"),
+            Action(title: "Sign Out",
+                   image: UIImage(systemName: "rectangle.portrait.and.arrow.right.fill"),
                    handler: { [weak self] in
-                       guard let self = self else { return }
-                       print("Hello")
+                       guard let self = self, let window = self.view.window else { return }
                        self.dismiss(animated: true)
+                       let loginVC = LogInScreenBuilder.create()
+                       let navigationController = UINavigationController(rootViewController: loginVC)
+                       UserService.shared.clearCurrentUserFromKeychain()
+                       window.rootViewController = navigationController
                    })
         ])
         menuVC.popoverPresentationController?.sourceView = editProfileButton
         menuVC.popoverPresentationController?.sourceRect = editProfileButton.bounds
         present(menuVC, animated: true, completion: nil)
     }
-  
     
     private func configureWithUser(user: User) {
         self.navigationItem.title = user.username
@@ -189,7 +193,7 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
     }
     
     private func setupViews() {
-        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: self.view.frame.width, height: 240))
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: self.view.frame.width, height: 268))
         let customView = UIView(frame: headerView.frame)
         customView.translatesAutoresizingMaskIntoConstraints = false
         customView.addSubview(bannerImage)
@@ -200,6 +204,7 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
         customView.addSubview(followButton)
         customView.addSubview(unfollowButton)
         customView.addSubview(editProfileButton)
+        customView.addSubview(postsLabel)
         view.addSubview(tableView)
         
         headerView.addSubview(customView)
@@ -219,19 +224,19 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
             bannerImage.trailingAnchor.constraint(equalTo: customView.trailingAnchor),
             bannerImage.heightAnchor.constraint(equalToConstant: 128),
             
-            profileImage.topAnchor.constraint(equalTo: bannerImage.bottomAnchor, constant: -28),
+            profileImage.topAnchor.constraint(equalTo: bannerImage.bottomAnchor, constant: -40),
             profileImage.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 8),
-            profileImage.heightAnchor.constraint(equalToConstant: 56),
-            profileImage.widthAnchor.constraint(equalToConstant: 56),
+            profileImage.heightAnchor.constraint(equalToConstant: 80),
+            profileImage.widthAnchor.constraint(equalToConstant: 80),
             
             nameLabel.topAnchor.constraint(equalTo: profileImage.bottomAnchor, constant: 8),
-            nameLabel.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 8),
+            nameLabel.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 12),
             
-            usernameLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8),
-            usernameLabel.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 8),
+            usernameLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
+            usernameLabel.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 12),
             
-            followInfoLabel.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 8),
-            followInfoLabel.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 8),
+            followInfoLabel.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 4),
+            followInfoLabel.leadingAnchor.constraint(equalTo: customView.leadingAnchor, constant: 12),
             
             followButton.heightAnchor.constraint(equalToConstant: 32),
             followButton.widthAnchor.constraint(equalToConstant: 100),
@@ -247,6 +252,9 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
             editProfileButton.widthAnchor.constraint(equalToConstant: 100),
             editProfileButton.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor),
             editProfileButton.trailingAnchor.constraint(equalTo: customView.trailingAnchor, constant: -8),
+            
+            postsLabel.topAnchor.constraint(equalTo: followInfoLabel.bottomAnchor, constant: 12),
+            postsLabel.centerXAnchor.constraint(equalTo: customView.centerXAnchor)
         ])
         tableView.tableHeaderView = headerView
     }
@@ -283,7 +291,7 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let postView = PostScreenBuilder.create(post: posts[indexPath.row])
+        let postView = PostScreenBuilder.create(postID: posts[indexPath.row].id, user: UserService.shared.currentUser!)
         self.navigationController?.pushViewController(postView, animated: true)
     }
 }
@@ -295,7 +303,6 @@ extension ProfileViewController: ProfileViewModelDelegate {
             showMessage(title: "Banner picture changed successfully!") { [weak self] in
                 guard let self = self else { return }
                 self.bannerImage.kf.setImage(with: URL(string: UserService.shared.currentUser!.bannerImageURL))
-                self.dismiss(animated: true)
             }
         }
     }

@@ -11,11 +11,19 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
     
     var viewModel: SignUpViewModel!
     
+    private let backgroundView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .black
+        return view
+    }()
+    
     private let emailTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "email"
         textField.borderStyle = .none
         textField.autocapitalizationType = .none
+        textField.autocorrectionType = .no
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -24,7 +32,9 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
         let textField = UITextField()
         textField.placeholder = "password"
         textField.borderStyle = .none
+        textField.textContentType = .oneTimeCode
         textField.isSecureTextEntry = true
+        textField.autocorrectionType = .no
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -33,7 +43,7 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
         let textField = UITextField()
         textField.placeholder = "name"
         textField.borderStyle = .none
-        textField.autocapitalizationType = .none
+        textField.autocorrectionType = .no
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -42,7 +52,8 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
         let textField = UITextField()
         textField.placeholder = "username"
         textField.borderStyle = .none
-        textField.isSecureTextEntry = true
+        textField.autocapitalizationType = .none
+        textField.autocorrectionType = .no
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -59,33 +70,12 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
         return button
     }()
     
-    private let emailSeperator: UIView = {
+    private func createSeparatorView() -> UIView {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .gray
         return view
-    }()
-    
-    private let passwordSeperator: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .gray
-        return view
-    }()
-    
-    private let nameSeperator: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .gray
-        return view
-    }()
-    
-    private let usernameSeperator: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .gray
-        return view
-    }()
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -94,10 +84,19 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
         navigationController?.navigationBar.tintColor = .white
         navigationController?.navigationBar.prefersLargeTitles = false
         setupViews()
+        hideKeyboardWhenTappedAround()
+        usernameTextField.delegate = self
     }
     
     private func setupViews() {
-        // Add email text field
+        view.addSubview(backgroundView)
+        NSLayoutConstraint.activate([
+            backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+        
         view.addSubview(emailTextField)
         NSLayoutConstraint.activate([
             emailTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
@@ -106,15 +105,15 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
             emailTextField.heightAnchor.constraint(equalToConstant: 40)
         ])
         
-        view.addSubview(emailSeperator)
+        let emailSeparator = createSeparatorView()
+        view.addSubview(emailSeparator)
         NSLayoutConstraint.activate([
-            emailSeperator.topAnchor.constraint(equalTo: emailTextField.bottomAnchor),
-            emailSeperator.widthAnchor.constraint(equalTo: emailTextField.widthAnchor),
-            emailSeperator.centerXAnchor.constraint(equalTo: emailTextField.centerXAnchor),
-            emailSeperator.heightAnchor.constraint(equalToConstant: 1)
+            emailSeparator.topAnchor.constraint(equalTo: emailTextField.bottomAnchor),
+            emailSeparator.widthAnchor.constraint(equalTo: emailTextField.widthAnchor),
+            emailSeparator.centerXAnchor.constraint(equalTo: emailTextField.centerXAnchor),
+            emailSeparator.heightAnchor.constraint(equalToConstant: 1)
         ])
         
-        // Add password text field
         view.addSubview(passwordTextField)
         NSLayoutConstraint.activate([
             passwordTextField.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 20),
@@ -123,12 +122,13 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
             passwordTextField.heightAnchor.constraint(equalToConstant: 40)
         ])
         
-        view.addSubview(passwordSeperator)
+        let passwordSeparator = createSeparatorView()
+        view.addSubview(passwordSeparator)
         NSLayoutConstraint.activate([
-            passwordSeperator.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor),
-            passwordSeperator.widthAnchor.constraint(equalTo: passwordTextField.widthAnchor),
-            passwordSeperator.centerXAnchor.constraint(equalTo: passwordTextField.centerXAnchor),
-            passwordSeperator.heightAnchor.constraint(equalToConstant: 1)
+            passwordSeparator.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor),
+            passwordSeparator.widthAnchor.constraint(equalTo: passwordTextField.widthAnchor),
+            passwordSeparator.centerXAnchor.constraint(equalTo: passwordTextField.centerXAnchor),
+            passwordSeparator.heightAnchor.constraint(equalToConstant: 1)
         ])
         
         view.addSubview(nameTextField)
@@ -139,12 +139,13 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
             nameTextField.heightAnchor.constraint(equalToConstant: 40)
         ])
         
-        view.addSubview(nameSeperator)
+        let nameSeparator = createSeparatorView()
+        view.addSubview(nameSeparator)
         NSLayoutConstraint.activate([
-            nameSeperator.topAnchor.constraint(equalTo: nameTextField.bottomAnchor),
-            nameSeperator.widthAnchor.constraint(equalTo: nameTextField.widthAnchor),
-            nameSeperator.centerXAnchor.constraint(equalTo: nameTextField.centerXAnchor),
-            nameSeperator.heightAnchor.constraint(equalToConstant: 1)
+            nameSeparator.topAnchor.constraint(equalTo: nameTextField.bottomAnchor),
+            nameSeparator.widthAnchor.constraint(equalTo: nameTextField.widthAnchor),
+            nameSeparator.centerXAnchor.constraint(equalTo: nameTextField.centerXAnchor),
+            nameSeparator.heightAnchor.constraint(equalToConstant: 1)
         ])
         
         view.addSubview(usernameTextField)
@@ -155,12 +156,13 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
             usernameTextField.heightAnchor.constraint(equalToConstant: 40)
         ])
         
-        view.addSubview(usernameSeperator)
+        let usernameSeparator = createSeparatorView()
+        view.addSubview(usernameSeparator)
         NSLayoutConstraint.activate([
-            usernameSeperator.topAnchor.constraint(equalTo: usernameTextField.bottomAnchor),
-            usernameSeperator.widthAnchor.constraint(equalTo: usernameTextField.widthAnchor),
-            usernameSeperator.centerXAnchor.constraint(equalTo: usernameTextField.centerXAnchor),
-            usernameSeperator.heightAnchor.constraint(equalToConstant: 1)
+            usernameSeparator.topAnchor.constraint(equalTo: usernameTextField.bottomAnchor),
+            usernameSeparator.widthAnchor.constraint(equalTo: usernameTextField.widthAnchor),
+            usernameSeparator.centerXAnchor.constraint(equalTo: usernameTextField.centerXAnchor),
+            usernameSeparator.heightAnchor.constraint(equalToConstant: 1)
         ])
         
         view.addSubview(signUpButton)
@@ -170,7 +172,6 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
             signUpButton.widthAnchor.constraint(equalToConstant: 64),
             signUpButton.heightAnchor.constraint(equalToConstant: 32)
         ])
-        
     }
     
     @objc private func signUpButtonTapped() {
@@ -185,10 +186,24 @@ class SignUpViewController: UIViewController, LoadingShowable, MessageShowable {
                 print("Signup error: \(error.localizedDescription)")
             } else {
                 print("Signup successful!")
-                showMessage(title: "Sign up successful!") {
+                showMessage(title: "Signup successful!") {
                     self.navigationController?.popToRootViewController(animated: true)
                 }
             }
         }
     }
 }
+
+extension SignUpViewController: UITextFieldDelegate {
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        if textField == usernameTextField {
+            let lowercaseString = string.lowercased()
+            if string != lowercaseString {
+                textField.text = (textField.text as NSString?)?.replacingCharacters(in: range, with: lowercaseString)
+                return false
+            }
+        }
+        return true
+    }
+}
+

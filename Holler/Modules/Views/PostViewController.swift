@@ -7,22 +7,12 @@
 
 import UIKit
 
+final class PostViewController: UIViewController {
 
-protocol PostViewModelDelegate: AnyObject {
-    func didFetchPosts(posts: [Post])
-}
-
-class PostViewController: UIViewController {
-    
     var viewModel: PostViewModel!
     var replies: [Post] = []
     weak var likeSyncDelegate: LikeSyncDelegate?
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupViews()
-        viewModel.fetchReplies()
-    }
+    weak var replySyncDelegate: ReplySyncDelegate?
     
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -37,7 +27,35 @@ class PostViewController: UIViewController {
         return tableView
     }()
     
-    func setupViews() {
+    private lazy var replyToPostButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "text.bubble"), for: .normal)
+        button.tintColor = .black
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 18
+        button.addTarget(self, action: #selector(didTapReplyButton), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    private let noRepliesLabel: UILabel = {
+        let label = UILabel()
+        label.text = "There are no replies yet.."
+        label.textColor = .gray
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.isHidden = true
+        return label
+    }()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupViews()
+        viewModel.fetchReplies()
+    }
+    
+    private func setupViews() {
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -45,30 +63,56 @@ class PostViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
+        
+        view.addSubview(replyToPostButton)
+        NSLayoutConstraint.activate([
+            replyToPostButton.heightAnchor.constraint(equalToConstant: 36),
+            replyToPostButton.widthAnchor.constraint(equalToConstant: 36),
+            replyToPostButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            replyToPostButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+        ])
+        
+        view.addSubview(noRepliesLabel)
+        NSLayoutConstraint.activate([
+            noRepliesLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            noRepliesLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+    
+    @objc func didTapReplyButton() {
+        present(PostCreateScreenBuilder.create(delegate: self, rootPostID: viewModel.post.id), animated: true)
     }
 }
 
 extension PostViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            1
+            if let post = viewModel.post, let user = post.user {
+                self.title = "\(user.name)'s Post"
+                return 1
+            }
+            return 0
         } else {
-            replies.count
+            return replies.count
         }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
-            let post = viewModel.post
+            guard let post = viewModel.post else { return UITableViewCell() }
             if post.hasImage {
                 let cell = tableView.dequeueReusableCell(withIdentifier: "postImageCell", for: indexPath) as! PostImageCell
                 cell.configure(post: post)
                 cell.delegate = self
+                cell.enableReplies()
+                cell.separatorInset = UIEdgeInsets(top: 0, left: self.view.frame.width, bottom: 0, right: 0)
                 return cell
             }
             let cell = tableView.dequeueReusableCell(withIdentifier: "postCell", for: indexPath) as! PostCell
             cell.configure(post: post)
             cell.delegate = self
+            cell.enableReplies()
+            cell.separatorInset = UIEdgeInsets(top: 0, left: self.view.frame.width, bottom: 0, right: 0)
             return cell
         }
         let post = replies[indexPath.row]
@@ -93,6 +137,31 @@ extension PostViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
     }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        if section == 1 {
+            let headerView = UIView()
+            headerView.backgroundColor = .clear
+            let headerLabel = UILabel()
+            headerLabel.text = "Replies"
+            headerLabel.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+            headerLabel.textColor = .white
+            headerLabel.translatesAutoresizingMaskIntoConstraints = false
+            headerView.addSubview(headerLabel)
+            NSLayoutConstraint.activate([
+                headerLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
+                headerLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
+                headerLabel.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 8),
+                headerLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -8)
+            ])
+            return headerView
+        }
+        return nil
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return section == 1 && !self.replies.isEmpty ? 40 : 0
+    }
 }
 
 extension PostViewController: PostViewModelDelegate {
@@ -100,8 +169,16 @@ extension PostViewController: PostViewModelDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.replies = posts
+            self.noRepliesLabel.isHidden = !self.replies.isEmpty
             self.tableView.reloadData()
         }
+    }
+}
+
+extension PostViewController: PostCreationDelegate {
+    func didPost(postID: String) {
+        replySyncDelegate?.repliedToPost(postID: postID, rootPostID: viewModel.post.id)
+        viewModel.fetchReplies()
     }
 }
 

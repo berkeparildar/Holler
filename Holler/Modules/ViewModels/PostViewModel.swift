@@ -9,44 +9,57 @@ import Foundation
 
 
 final class PostViewModel {
-    var post: Post
+    var postID: String!
     weak var delegate: PostViewModelDelegate?
+    var post: Post!
+    var user: User
     
-    init(post: Post) {
-        self.post = post
+    init(postID: String!, user: User, delegate: PostViewModelDelegate? = nil) {
+        self.postID = postID
+        self.delegate = delegate
+        self.user = user
     }
     
     func fetchReplies() {
-        let replyIDs = post.replies
-        var replies = [Post]()
-        let dispatchGroup = DispatchGroup()
-        for reply in replyIDs {
-            dispatchGroup.enter()
-            FirebaseService.shared.fetchPost(postID: reply, user: nil) { post, error in
-                if let error = error {
-                    print("There was an error fetching replies \(error.localizedDescription)")
-                    dispatchGroup.leave()
-                }
-                if var post = post {
-                    dispatchGroup.enter()
-                    FirebaseService.shared.fetchUser(userID: post.userID) { user, error in
-                        if let error = error {
-                            print("There was en error fetching user: \(error.localizedDescription)")
-                            dispatchGroup.leave()
-                        }
-                        if let user = user {
-                            post.user = user
-                            replies.append(post)
-                            dispatchGroup.leave()
-                        }
+        FirebaseService.shared.fetchPost(postID: postID, user: nil) { post, error in
+            if let error = error {
+                print("There was an error fetching replies \(error.localizedDescription)")
+            }
+            guard var post = post else { return }
+            post.user = self.user
+            self.post = post
+            let replyIDs = post.replies
+            var replies = [Post]()
+            let dispatchGroup = DispatchGroup()
+            for reply in replyIDs {
+                dispatchGroup.enter()
+                FirebaseService.shared.fetchPost(postID: reply, user: nil) { post, error in
+                    if let error = error {
+                        print("There was an error fetching replies \(error.localizedDescription)")
+                        dispatchGroup.leave()
                     }
-                    dispatchGroup.leave()
+                    if var post = post {
+                        dispatchGroup.enter()
+                        FirebaseService.shared.fetchUser(userID: post.userID) { user, error in
+                            if let error = error {
+                                print("There was en error fetching user: \(error.localizedDescription)")
+                                dispatchGroup.leave()
+                            }
+                            if let user = user {
+                                post.user = user
+                                replies.append(post)
+                                dispatchGroup.leave()
+                            }
+                        }
+                        dispatchGroup.leave()
+                    }
                 }
             }
+            dispatchGroup.notify(queue: .main) {
+                self.delegate?.didFetchPosts(posts: replies)
+            }
         }
-        dispatchGroup.notify(queue: .main) {
-            self.delegate?.didFetchPosts(posts: replies)
-        }
+        
     }
     
     func didLikePost(postID: String) {

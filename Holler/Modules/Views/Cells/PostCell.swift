@@ -73,7 +73,8 @@ class PostCell: UITableViewCell {
     
     private lazy var replyImage :UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "message")
+        imageView.image = UIImage(systemName: "bubble")
+        imageView.tintColor = .lightGray
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -156,7 +157,7 @@ class PostCell: UITableViewCell {
             
             likeButton.widthAnchor.constraint(equalToConstant: 16),
             likeButton.heightAnchor.constraint(equalToConstant: 16),
-            likeButton.trailingAnchor.constraint(equalTo: likeCountLabel.trailingAnchor, constant: -12),
+            likeButton.trailingAnchor.constraint(equalTo: likeCountLabel.trailingAnchor, constant: -10),
             likeButton.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
             
             replyCountLabel.trailingAnchor.constraint(equalTo: likeButton.leadingAnchor, constant: -16),
@@ -164,7 +165,7 @@ class PostCell: UITableViewCell {
             
             replyImage.widthAnchor.constraint(equalToConstant: 16),
             replyImage.heightAnchor.constraint(equalToConstant: 16),
-            replyImage.trailingAnchor.constraint(equalTo: replyCountLabel.trailingAnchor, constant: -12),
+            replyImage.trailingAnchor.constraint(equalTo: replyCountLabel.trailingAnchor, constant: -10),
             replyImage.topAnchor.constraint(equalTo: postTextLabel.bottomAnchor, constant: 8),
             replyImage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
@@ -199,5 +200,10 @@ class PostCell: UITableViewCell {
     func disableReplies() {
         self.replyImage.isHidden = true
         self.replyCountLabel.isHidden = true
+    }
+    
+    func enableReplies() {
+        self.replyImage.isHidden = false
+        self.replyCountLabel.isHidden = false
     }
 }

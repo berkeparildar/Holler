@@ -11,7 +11,13 @@ final class HomeViewController: UIViewController {
     
     var viewModel: HomeViewModel!
     var posts: [Post] = []
-    private let refreshControl = UIRefreshControl()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        showLoading()
+        setupViews()
+        viewModel.fetchPostsForHomePage()
+    }
     
     private lazy var createPostButton: UIButton = {
         let button = UIButton(type: .system)
@@ -37,6 +43,13 @@ final class HomeViewController: UIViewController {
         return tableView
     }()
     
+    private lazy var refreshControl: UIRefreshControl = {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        tableView.refreshControl = refreshControl
+        return refreshControl
+    }()
+    
     private lazy var progressView: UIActivityIndicatorView = {
         let progressView = UIActivityIndicatorView()
         progressView.isHidden = true
@@ -44,14 +57,16 @@ final class HomeViewController: UIViewController {
         return progressView
     }()
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        self.title = "Feed"
-        showLoading()
-        setupViews()
-        setupRefreshControl()
-        viewModel.fetchPostsForHomePage()
-    }
+    private lazy var emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.text = "There is nothing here... Create a post or try following a user"
+        label.textColor = .gray
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.isHidden = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
     func setupViews() {
         view.addSubview(tableView)
@@ -75,11 +90,13 @@ final class HomeViewController: UIViewController {
             progressView.heightAnchor.constraint(equalToConstant: 32),
             progressView.widthAnchor.constraint(equalToConstant: 32)
         ])
-    }
-    
-    private func setupRefreshControl() {
-        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
-        tableView.refreshControl = refreshControl
+        view.addSubview(emptyStateLabel)
+        NSLayoutConstraint.activate([
+            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            emptyStateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
+        ])
     }
     
     @objc private func refreshData() {
@@ -100,6 +117,10 @@ final class HomeViewController: UIViewController {
         progressView.stopAnimating()
         progressView.isHidden = true
         tableView.isHidden = false
+    }
+    
+    private func updateEmptyStateLabel() {
+        emptyStateLabel.isHidden = !posts.isEmpty
     }
 }
 
@@ -128,27 +149,32 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let postView = PostScreenBuilder.create(post: posts[indexPath.row], likeDelegate: self)
+        let postView = PostScreenBuilder.create(postID: posts[indexPath.row].id, user: posts[indexPath.row].user!,  likeDelegate: self, replyDelegate: self)
         self.navigationController?.pushViewController(postView, animated: true)
     }
 }
 
 extension HomeViewController: PostCreationDelegate {
-    func didPost() {
+    func didPost(postID: String) {
         showLoading()
         posts.removeAll()
-        tableView.reloadData()
         viewModel.fetchPostsForHomePage()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            tableView.reloadData()
+        }
     }
 }
 
 extension HomeViewController: HomeViewModelDelegate {
     func didFetchPosts(posts: [Post]) {
         self.posts = posts.sorted(by: { $0.time > $1.time })
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.refreshControl.endRefreshing()
-            self.tableView.reloadData()
-            self.hideLoading()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self = self else { return }
+            refreshControl.endRefreshing()
+            tableView.reloadData()
+            hideLoading()
+            updateEmptyStateLabel()
         }
     }
 }
@@ -212,5 +238,19 @@ extension HomeViewController: LikeSyncDelegate {
         }
         posts[likedPost!].likes.append(UserService.shared.currentUser!.uid)
         tableView.reloadData()
+    }
+}
+
+extension HomeViewController: ReplySyncDelegate {
+    func repliedToPost(postID: String, rootPostID: String) {
+        let repliedPostIndex = posts.firstIndex { post in
+            post.id == rootPostID
+        }
+        guard let repliedPostIndex = repliedPostIndex else { return }
+        posts[repliedPostIndex].replies.append(postID)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            tableView.reloadData()
+        }
     }
 }

@@ -74,9 +74,9 @@ final class FirebaseService {
         }
     }
     
-    func createPost(text: String, imageData: Data?, completion: @escaping (Bool, Error?) -> Void) {
+    func createPost(text: String, imageData: Data?, completion: @escaping (String?, Error?) -> Void) {
         guard let currentUserUID = UserService.shared.currentUser?.uid else {
-            completion(false, NSError(domain: "User not logged in", code: 401, userInfo: nil))
+            completion(nil, NSError(domain: "User not logged in", code: 401, userInfo: nil))
             return
         }
         var postData: [String: Any] = [
@@ -92,7 +92,7 @@ final class FirebaseService {
         if let imageData = imageData {
             uploadPostImage(imageData, postID: postRef.documentID) { imageUrl, error in
                 if let error = error {
-                    completion(false, error)
+                    completion(nil, error)
                     return
                 }
                 if let imageUrl = imageUrl {
@@ -106,26 +106,76 @@ final class FirebaseService {
         }
     }
     
-    func savePostData(_ postData: [String: Any], postRef: DocumentReference, userID: String, completion: @escaping (Bool, Error?) -> Void) {
+    func createReply(text: String, imageData: Data?, rootPostID: String, completion: @escaping (String?, Error?) -> Void) {
+        var postData: [String: Any] = [
+            "hasImage": false,
+            "image": "",
+            "likes": [],
+            "replies": [],
+            "text": text,
+            "userID": UserService.shared.currentUser!.uid,
+            "time": Int(Date().timeIntervalSince1970)
+        ]
+        let postRef = db.collection("posts").document()
+        if let imageData = imageData {
+            uploadPostImage(imageData, postID: postRef.documentID) { imageUrl, error in
+                if let error = error {
+                    completion(nil, error)
+                    return
+                }
+                if let imageUrl = imageUrl {
+                    postData["hasImage"] = true
+                    postData["image"] = imageUrl.absoluteString
+                }
+                self.saveReplyData(postData, rootPostID: rootPostID, postRef: postRef, completion: completion)
+            }
+        } else {
+            self.saveReplyData(postData, rootPostID: rootPostID, postRef: postRef, completion: completion)
+        }
+    }
+    
+    func savePostData(_ postData: [String: Any], postRef: DocumentReference, userID: String, completion: @escaping (String?, Error?) -> Void) {
         postRef.setData(postData) { [weak self] error in
             guard let self = self else { return }
             if let error = error {
-                completion(false, error)
+                completion(nil, error)
                 return
             }
             self.addPostToUser(postID: postRef.documentID, userID: userID, completion: completion)
         }
     }
     
-    private func addPostToUser(postID: String, userID: String, completion: @escaping (Bool, Error?) -> Void) {
+    func saveReplyData(_ postData: [String: Any], rootPostID: String, postRef: DocumentReference, completion: @escaping (String?, Error?) -> Void) {
+        postRef.setData(postData) { [weak self] error in
+            guard let self = self else { return }
+            if let error = error {
+                completion(nil, error)
+                return
+            }
+            addReplyToPost(postID: postRef.documentID, rootPostID: rootPostID, completion: completion)
+        }
+    }
+    
+    private func addPostToUser(postID: String, userID: String, completion: @escaping (String?, Error?) -> Void) {
         let userRef = db.collection("users").document(userID)
         UserService.shared.currentUser!.posts.append(postID)
         userRef.updateData(["posts": UserService.shared.currentUser!.posts]) { error in
             if let error = error {
-                completion(false, error)
+                completion(nil, error)
                 return
             }
-            completion(true, nil)
+            completion(postID, nil)
+        }
+    }
+    
+    private func addReplyToPost(postID: String, rootPostID: String, completion: @escaping (String?, Error?) -> Void) {
+        let postRef = db.collection("posts").document(rootPostID)
+        postRef.updateData(["replies": FieldValue.arrayUnion([postID])]) { error in
+            if let error = error {
+                completion(nil, error)
+                return
+            }
+            completion(postID, nil)
         }
     }
     

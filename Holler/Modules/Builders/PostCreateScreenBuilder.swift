@@ -8,9 +8,9 @@
 import Foundation
 
 final class PostCreateScreenBuilder {
-    static func create(delegate: PostCreationDelegate) -> PostCreateViewController {
+    static func create(delegate: PostCreationDelegate, rootPostID: String? = nil) -> PostCreateViewController {
         let viewController = PostCreateViewController()
-        let viewModel = PostCreateViewModel()
+        let viewModel = PostCreateViewModel(rootPostID: rootPostID)
         viewModel.delegate = delegate
         viewModel.viewDelegate = viewController
         viewController.viewModel = viewModel
