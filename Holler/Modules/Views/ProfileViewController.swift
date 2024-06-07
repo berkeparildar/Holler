@@ -151,9 +151,9 @@ final class ProfileViewController: UIViewController, MessageShowable, LoadingSho
                    image: UIImage(systemName: "photo.fill"),
                    handler: { [weak self] in
                        guard let self = self else { return }
+                       self.dismiss(animated: true)
                        self.isSelectingProfileImage = false
                        self.selectImage()
-                       self.dismiss(animated: true)
                    }),
             Action(title: "Sign Out",
                    image: UIImage(systemName: "rectangle.portrait.and.arrow.right.fill"),
@@ -291,7 +291,7 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let postView = PostScreenBuilder.create(postID: posts[indexPath.row].id, user: UserService.shared.currentUser!)
+        let postView = PostScreenBuilder.create(postID: posts[indexPath.row].id, user: viewModel.user!)
         self.navigationController?.pushViewController(postView, animated: true)
     }
 }
@@ -300,9 +300,15 @@ extension ProfileViewController: ProfileViewModelDelegate {
     func didChangeBannerPicture(success: Bool) {
         hideLoading()
         if success {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.tableView.reloadData()
+            }
             showMessage(title: "Banner picture changed successfully!") { [weak self] in
                 guard let self = self else { return }
+                self.viewModel.fetchPostsForProfile()
                 self.bannerImage.kf.setImage(with: URL(string: UserService.shared.currentUser!.bannerImageURL))
+                self.dismiss(animated: true)
             }
         }
     }
@@ -312,6 +318,7 @@ extension ProfileViewController: ProfileViewModelDelegate {
         if success {
             showMessage(title: "Profile picture changed successfully!") { [weak self] in
                 guard let self = self else { return }
+                self.viewModel.fetchPostsForProfile()
                 self.profileImage.kf.setImage(with: URL(string: UserService.shared.currentUser!.profileImageURL))
                 self.dismiss(animated: true)
             }
@@ -342,7 +349,10 @@ extension ProfileViewController: ProfileViewModelDelegate {
     
     func didFetchPosts(posts: [Post]) {
         self.posts = posts.sorted(by: { $0.time > $1.time })
-        tableView.reloadData()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.tableView.reloadData()
+        }
     }
 }
 

@@ -19,6 +19,14 @@ class LogInViewController: UIViewController {
         return view
     }()
     
+    var logo: UIImageView = {
+        var logo = UIImageView()
+        logo.contentMode = .scaleAspectFill
+        logo.image = UIImage(named: "logo")
+        logo.translatesAutoresizingMaskIntoConstraints = false
+        return logo
+    }()
+    
     private let emailTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "email"
@@ -77,8 +85,8 @@ class LogInViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        hideKeyboardWhenTappedAround()
         setupViews()
-        setupDismissKeyboardGesture()
     }
     
     private func setupViews() {
@@ -90,9 +98,17 @@ class LogInViewController: UIViewController {
             backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
         
+        view.addSubview(logo)
+        NSLayoutConstraint.activate([
+            logo.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            logo.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            logo.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            logo.heightAnchor.constraint(equalToConstant: 80)
+        ])
+        
         view.addSubview(emailTextField)
         NSLayoutConstraint.activate([
-            emailTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
+            emailTextField.topAnchor.constraint(equalTo: logo.bottomAnchor, constant: 50),
             emailTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             emailTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             emailTextField.heightAnchor.constraint(equalToConstant: 40)
@@ -136,15 +152,6 @@ class LogInViewController: UIViewController {
             signupButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
             signupButton.heightAnchor.constraint(equalToConstant: 32)
         ])
-    }
-    
-    private func setupDismissKeyboardGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        view.addGestureRecognizer(tapGesture)
-    }
-    
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
     }
     
     @objc private func loginButtonTapped() {

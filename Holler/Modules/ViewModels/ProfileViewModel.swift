@@ -142,8 +142,4 @@ final class ProfileViewModel {
             delegate?.didChangeBannerPicture(success: true)
         }
     }
-    
-    func changeUsername(newUsername: String) {
-        
-    }
 }

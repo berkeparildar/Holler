@@ -8,7 +8,7 @@
 import UIKit
 
 final class PostViewController: UIViewController {
-
+    
     var viewModel: PostViewModel!
     var replies: [Post] = []
     weak var likeSyncDelegate: LikeSyncDelegate?
@@ -75,7 +75,7 @@ final class PostViewController: UIViewController {
         view.addSubview(noRepliesLabel)
         NSLayoutConstraint.activate([
             noRepliesLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            noRepliesLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            noRepliesLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 200)
         ])
     }
     
@@ -141,7 +141,7 @@ extension PostViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         if section == 1 {
             let headerView = UIView()
-            headerView.backgroundColor = .clear
+            headerView.backgroundColor = .black
             let headerLabel = UILabel()
             headerLabel.text = "Replies"
             headerLabel.font = UIFont.systemFont(ofSize: 16, weight: .bold)
@@ -158,7 +158,7 @@ extension PostViewController: UITableViewDelegate, UITableViewDataSource {
         }
         return nil
     }
-
+    
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return section == 1 && !self.replies.isEmpty ? 40 : 0
     }
@@ -168,7 +168,7 @@ extension PostViewController: PostViewModelDelegate {
     func didFetchPosts(posts: [Post]) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.replies = posts
+            self.replies = posts.sorted(by: { $0.likes.count > $1.likes.count })
             self.noRepliesLabel.isHidden = !self.replies.isEmpty
             self.tableView.reloadData()
         }
@@ -224,18 +224,16 @@ extension PostViewController: CellDelegate {
     }
     
     func didTapUserProfile(userID: String, user: User?) {
-        if likeSyncDelegate == nil {
-            navigationController?.popToRootViewController(animated: true)
+        
+        if userID == UserService.shared.currentUser!.uid {
+            guard let tabBarController = self.tabBarController else { return }
+            UIView.transition(with: tabBarController.view, duration: 0.3, options: .transitionCrossDissolve, animations: {
+                tabBarController.selectedIndex = 2
+            }, completion: nil)
         } else {
-            if userID == UserService.shared.currentUser!.uid {
-                guard let tabBarController = self.tabBarController else { return }
-                UIView.transition(with: tabBarController.view, duration: 0.3, options: .transitionCrossDissolve, animations: {
-                    tabBarController.selectedIndex = 2
-                }, completion: nil)
-            } else {
-                let profileView = ProfileScreenBuilder.create(userID: userID, user: user)
-                self.navigationController?.pushViewController(profileView, animated: true)
-            }
+            let profileView = ProfileScreenBuilder.create(userID: userID, user: user)
+            self.navigationController?.pushViewController(profileView, animated: true)
         }
+        
     }
 }

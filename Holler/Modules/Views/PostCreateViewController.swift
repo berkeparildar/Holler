@@ -20,6 +20,13 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
         setupViews()
     }
     
+    private let backgroundView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .black
+        return view
+    }()
+    
     private lazy var profileImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.layer.cornerRadius = 20
@@ -54,6 +61,7 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
         let button = UIButton(type: .system)
         button.isEnabled = false
         button.setTitle("Post", for: .normal)
+        button.setTitleColor(.white, for: .normal)
         button.addTarget(self, action: #selector(didTapPost), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -80,7 +88,7 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
     }()
     
     private func setupViews() {
-        view.backgroundColor = .black
+        view.addSubview(backgroundView)
         view.addSubview(profileImageView)
         view.addSubview(textField)
         view.addSubview(addImageButton)
@@ -89,6 +97,11 @@ class PostCreateViewController: UIViewController, UIImagePickerControllerDelegat
         view.addSubview(removeImageButton)
         profileImageView.kf.setImage(with: URL(string: UserService.shared.currentUser!.profileImageURL))
         NSLayoutConstraint.activate([
+            backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
             profileImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             profileImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             profileImageView.widthAnchor.constraint(equalToConstant: 40),

@@ -15,19 +15,19 @@ class SplashViewController: UIViewController, ShowAlert {
     
     var background: UIView = {
         var backgroundView = UIView()
-        backgroundView.backgroundColor = .red
         return backgroundView
     }()
     
     var splashLogo: UIImageView = {
         var logo = UIImageView()
-        logo.image = UIImage(systemName: "globe")
+        logo.contentMode = .scaleAspectFit
+        logo.image = UIImage(named: "logo")
         return logo
     }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .red
+        view.backgroundColor = .black
         setupViews()
         viewModel.checkInternetConnection()
     }
@@ -44,8 +44,8 @@ class SplashViewController: UIViewController, ShowAlert {
             self.background.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
             self.splashLogo.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
             self.splashLogo.centerYAnchor.constraint(equalTo: self.view.centerYAnchor),
-            self.splashLogo.widthAnchor.constraint(equalToConstant: 120),
-            self.splashLogo.heightAnchor.constraint(equalToConstant: 120),
+            self.splashLogo.widthAnchor.constraint(equalToConstant: 360),
+            self.splashLogo.heightAnchor.constraint(equalToConstant: 360),
             
         ])
     }
@@ -53,21 +53,27 @@ class SplashViewController: UIViewController, ShowAlert {
 
 extension SplashViewController: SplashViewModelDelegate {
     func navigateToHomePage() {
-        guard let window = self.view.window else { return }
-        if let uid = try? keychain.get("uid"), !uid.isEmpty {
-            UserService.shared.fetchCurrentUser { user, error in
-                if let error = error {
-                    print(error.localizedDescription)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: { [weak self] in
+            guard let self = self, let window = self.view.window else { return }
+            if let uid = try? keychain.get("uid"), !uid.isEmpty {
+                UserService.shared.fetchCurrentUser { user, error in
+                    if let error = error {
+                        print(error.localizedDescription)
+                    }
+                    if let user = user {
+                        window.rootViewController = TabBarBuilder.create(user: user)
+                    }
                 }
-                if let user = user {
-                    window.rootViewController = TabBarBuilder.create(user: user)
+            } else {
+                UIView.animate(withDuration: 0.3) {
+                    self.view.layer.opacity = 0
+                } completion: { _ in
+                    let loginVC = LogInScreenBuilder.create()
+                    let navigationController = UINavigationController(rootViewController: loginVC)
+                    window.rootViewController = navigationController
                 }
             }
-        } else {
-            let loginVC = LogInScreenBuilder.create()
-            let navigationController = UINavigationController(rootViewController: loginVC)
-            window.rootViewController = navigationController
-        }
+        })
     }
     
     func showInternetError() {

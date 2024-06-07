@@ -72,7 +72,7 @@ class SearchViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
             informativeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            informativeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -240)
+            informativeLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 200)
         ])
     }
 }

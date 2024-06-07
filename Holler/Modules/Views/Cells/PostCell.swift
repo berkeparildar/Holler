@@ -73,7 +73,7 @@ class PostCell: UITableViewCell {
     
     private lazy var replyImage :UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "bubble")
+        imageView.image = UIImage(systemName: "bubble.left")
         imageView.tintColor = .lightGray
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false

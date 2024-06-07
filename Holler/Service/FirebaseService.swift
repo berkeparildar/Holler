@@ -41,18 +41,6 @@ final class FirebaseService {
         }
     }
     
-    func getImageURL(from path: String, completion: @escaping (URL?) -> Void) {
-        let storageRef = storage.reference().child(path)
-        storageRef.downloadURL { (url, error) in
-            if let error = error {
-                print("Error fetching image URL: \(error.localizedDescription)")
-                completion(nil)
-                return
-            }
-            completion(url)
-        }
-    }
-    
     func lookForUser(with userID: String, completion: @escaping ([String]?, Error?) -> Void) {
         db.collection("usernames").getDocuments { querySnapshot, error in
             if let error = error {
@@ -67,7 +55,6 @@ final class FirebaseService {
                 if documentName.contains(userID) {
                     let userID = document.data()["userID"] as! String
                     usernames.append(userID)
-                    print(userID)
                 }
             }
             completion(usernames.isEmpty ? nil : usernames, nil)
@@ -232,6 +219,18 @@ final class FirebaseService {
             "likes": FieldValue.arrayRemove([UserService.shared.currentUser!.uid])
         ]) { error in
             completion(error)
+        }
+    }
+    
+    func getImageURL(from path: String, completion: @escaping (URL?) -> Void) {
+        let storageRef = storage.reference().child(path)
+        storageRef.downloadURL { (url, error) in
+            if let error = error {
+                print("Error fetching image URL: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+            completion(url)
         }
     }
     
